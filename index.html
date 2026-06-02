@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>FinanceFlow</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 :root{--bg:#0f1117;--card:#1a1d27;--card2:#1f2335;--green:#00c896;--purple:#7c6af7;--red:#ff4d6d;--orange:#ff9f43;--blue:#3b82f6;--yellow:#fbbf24;--text:#e2e8f0;--text2:#94a3b8;--border:#2d3148;--sw:225px;--bnh:64px}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -143,6 +144,23 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 @keyframes sin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes sout{from{opacity:1}to{opacity:0;transform:translateY(8px)}}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+/* ── PDF IMPORT ── */
+.pdf-drop{border:2px dashed var(--border);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-top:4px}
+.pdf-drop:hover,.pdf-drop.drag{border-color:var(--green);background:rgba(0,200,150,.06)}
+.pdf-drop .drop-icon{font-size:2.8rem;margin-bottom:10px}
+.pdf-drop p{font-size:.88rem;color:var(--text2);margin-top:4px}
+.pdf-drop strong{color:var(--text);font-size:.95rem}
+.pdf-spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .75s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pdf-tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.pdf-tbl th{color:var(--text2);text-align:left;padding:7px 6px;border-bottom:1px solid var(--border);font-weight:600;font-size:.73rem;text-transform:uppercase;white-space:nowrap}
+.pdf-tbl td{padding:6px 6px;border-bottom:1px solid rgba(45,49,72,.5);vertical-align:middle}
+.pdf-tbl tr:hover td{background:rgba(255,255,255,.025)}
+.pdf-tbl input[type=date],.pdf-tbl input[type=text],.pdf-tbl select{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:4px 6px;color:var(--text);font-size:.76rem;font-family:inherit;width:100%}
+.pdf-tbl input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--green)}
+.pdf-step-bar{display:flex;gap:0;margin-bottom:18px}
+.pdf-step{flex:1;padding:8px;text-align:center;font-size:.72rem;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);transition:all .2s}
+.pdf-step.active{color:var(--green);border-bottom-color:var(--green)}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .divider{height:1px;background:var(--border);margin:16px 0}
 .badge{padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;display:inline-block}
@@ -348,7 +366,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div id="sec-cartoes" class="sec">
   <div class="ph"><h1>Cartões de Crédito</h1><p>Faturas e limites</p></div>
   <div class="ca">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <button class="btn btn-s" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--blue)" onclick="openPdfMo()">📄 Importar Fatura PDF</button>
       <button class="btn btn-s" onclick="openCardMo()">+ Novo Cartão</button>
     </div>
     <div id="cards-grid" class="g2"></div>
@@ -609,6 +628,60 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="mdf">
       <button class="btn btn-s" onclick="closeMo('mo-cat')">Cancelar</button>
       <button class="btn btn-p" style="width:auto;flex:1" onclick="saveCat()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PDF Import -->
+<div class="mo" id="mo-pdf">
+  <div class="md" style="max-width:700px;width:100%">
+    <div class="md-handle"></div>
+    <h2>📄 Importar Fatura PDF</h2>
+    <div class="pdf-step-bar">
+      <div class="pdf-step active" id="ps1-lbl">1. Selecionar arquivo</div>
+      <div class="pdf-step" id="ps2-lbl">2. Revisar transações</div>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="pdf-s1">
+      <div class="fg" style="margin-bottom:14px">
+        <label>Qual cartão é esta fatura?</label>
+        <select id="pdf-card-sel"></select>
+      </div>
+      <div class="pdf-drop" id="pdf-drop"
+        onclick="document.getElementById('pdf-file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="event.preventDefault();this.classList.remove('drag');handlePdfFile(event.dataTransfer.files[0])">
+        <div class="drop-icon">📄</div>
+        <strong>Clique ou arraste o PDF aqui</strong>
+        <p>Fatura em PDF do seu cartão de crédito</p>
+        <p style="margin-top:8px;font-size:.75rem;color:var(--purple)">Compatível com: Nubank, Itaú, Bradesco, Santander, C6, Inter e outros</p>
+        <input type="file" id="pdf-file-input" accept=".pdf" style="display:none" onchange="handlePdfFile(this.files[0])">
+      </div>
+      <div id="pdf-processing" style="display:none;text-align:center;padding:32px 0">
+        <div class="pdf-spinner"></div>
+        <p style="color:var(--text2);font-size:.9rem" id="pdf-proc-msg">Lendo PDF...</p>
+        <p style="color:var(--text2);font-size:.76rem;margin-top:6px">Isso pode levar alguns segundos</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="pdf-s2" style="display:none">
+      <div id="pdf-stats"></div>
+      <div style="overflow-y:auto;max-height:46vh;border:1px solid var(--border);border-radius:10px;padding:4px">
+        <div id="pdf-table-wrap"></div>
+      </div>
+      <div id="pdf-not-found" style="display:none" class="es">
+        <div class="ei">🔍</div>
+        <p>Nenhuma transação encontrada.<br>Tente um banco diferente ou verifique se o PDF é uma fatura de cartão.</p>
+      </div>
+    </div>
+
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closePdfMo()">Cancelar</button>
+      <button class="btn btn-s" id="pdf-back-btn" style="display:none" onclick="pdfGoBack()">← Voltar</button>
+      <button class="btn btn-p" id="pdf-confirm-btn" style="display:none;flex:1" onclick="confirmPdfImport()">Importar</button>
     </div>
   </div>
 </div>
@@ -1289,6 +1362,266 @@ function saveCat(){
   persist();closeMo('mo-cat');rendCats();toast('Categoria salva!');
 }
 function delCat(id){const cat=S.cats.find(c=>c.id===id);if(!cat||cat.def)return;if(!confirm(`Excluir "${cat.name}"?`))return;S.cats=S.cats.filter(c=>c.id!==id);persist();rendCats();toast('Excluída')}
+
+// ── PDF IMPORT ─────────────────────────────────────────────
+let pdfTxns = [];
+
+function openPdfMo(cardId) {
+  const sel = document.getElementById('pdf-card-sel');
+  sel.innerHTML = S.cards.length
+    ? S.cards.map(c=>`<option value="${c.id}"${c.id===cardId?' selected':''}>${c.name}</option>`).join('')
+    : '<option value="">— nenhum cartão cadastrado —</option>';
+  pdfGoBack();
+  pdfTxns = [];
+  openMo('mo-pdf');
+}
+
+function closePdfMo() {
+  closeMo('mo-pdf');
+  document.getElementById('pdf-file-input').value = '';
+}
+
+function pdfGoBack() {
+  document.getElementById('pdf-s1').style.display = 'block';
+  document.getElementById('pdf-s2').style.display = 'none';
+  document.getElementById('pdf-processing').style.display = 'none';
+  document.getElementById('pdf-drop').style.display = 'block';
+  document.getElementById('pdf-confirm-btn').style.display = 'none';
+  document.getElementById('pdf-back-btn').style.display = 'none';
+  document.getElementById('ps1-lbl').classList.add('active');
+  document.getElementById('ps2-lbl').classList.remove('active');
+  document.getElementById('pdf-file-input').value = '';
+}
+
+async function handlePdfFile(file) {
+  if (!file || file.type !== 'application/pdf') { toast('Selecione um arquivo PDF válido', 'error'); return; }
+  if (!S.cards.length) { toast('Cadastre um cartão antes de importar uma fatura', 'error'); return; }
+
+  document.getElementById('pdf-drop').style.display = 'none';
+  document.getElementById('pdf-processing').style.display = 'block';
+  document.getElementById('pdf-proc-msg').textContent = 'Lendo PDF...';
+
+  try {
+    if (typeof pdfjsLib === 'undefined') throw new Error('Biblioteca PDF não carregada. Verifique sua conexão.');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+    document.getElementById('pdf-proc-msg').textContent = 'Extraindo texto...';
+    const buf = await file.arrayBuffer();
+    const text = await extractPdfText(buf);
+
+    document.getElementById('pdf-proc-msg').textContent = 'Identificando transações...';
+    const cardId = document.getElementById('pdf-card-sel').value;
+    pdfTxns = parsePdfTransactions(text, cardId);
+
+    document.getElementById('pdf-s1').style.display = 'none';
+    document.getElementById('pdf-s2').style.display = 'block';
+    document.getElementById('pdf-processing').style.display = 'none';
+    document.getElementById('ps1-lbl').classList.remove('active');
+    document.getElementById('ps2-lbl').classList.add('active');
+    document.getElementById('pdf-back-btn').style.display = '';
+
+    if (pdfTxns.length === 0) {
+      document.getElementById('pdf-table-wrap').innerHTML = '';
+      document.getElementById('pdf-not-found').style.display = 'block';
+      document.getElementById('pdf-stats').innerHTML = '';
+    } else {
+      document.getElementById('pdf-not-found').style.display = 'none';
+      renderPdfTable();
+      document.getElementById('pdf-confirm-btn').style.display = '';
+    }
+  } catch (err) {
+    toast('Erro ao processar PDF: ' + (err.message || err), 'error');
+    pdfGoBack();
+  }
+}
+
+async function extractPdfText(arrayBuffer) {
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(arrayBuffer)}).promise;
+  let full = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const tc = await page.getTextContent();
+    const lineMap = new Map();
+    tc.items.forEach(item => {
+      if (!item.str || !item.str.trim()) return;
+      const y = Math.round(item.transform[5] / 2) * 2;
+      if (!lineMap.has(y)) lineMap.set(y, []);
+      lineMap.get(y).push({x: item.transform[4], s: item.str});
+    });
+    [...lineMap.keys()].sort((a,b)=>b-a).forEach(y => {
+      const line = lineMap.get(y).sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim();
+      if (line.length > 1) full += line + '\n';
+    });
+  }
+  return full;
+}
+
+function parsePdfTransactions(text, cardId) {
+  const results = [];
+  const seen = new Set();
+  const nowY = new Date().getFullYear();
+  const nowM = new Date().getMonth() + 1;
+
+  const MONTHS = {jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12,
+    janeiro:1,fevereiro:2,'março':3,marco:3,abril:4,maio:5,junho:6,julho:7,agosto:8,setembro:9,outubro:10,novembro:11,dezembro:12};
+
+  const SKIP = /\b(total|subtotal|saldo|limite|pagamento m[ií]n|pagamento anterior|encargo|juro|anuidade|tarifa|taxa|vencimento|fatura|obrigat[oó]rio|iof|multa|mora|cet\b|cdb|tesouro|rendimento|extrato|conta|ag[eê]ncia|cpf|cnpj|email|telefone|endere[cç]o)\b/i;
+
+  const lines = text.split('\n');
+
+  // Try to detect statement year from header text like "Fatura de Maio/2026"
+  let stmtYear = nowY;
+  let stmtMonth = nowM;
+  for (const line of lines.slice(0, 30)) {
+    const m = /fatura\s+de\s+(\w+)[\/\s]+(\d{4})/i.exec(line) || /(\w+)\/(\d{4})/i.exec(line);
+    if (m) {
+      const mNum = MONTHS[m[1].toLowerCase().slice(0,3)];
+      if (mNum && parseInt(m[2]) > 2000) { stmtYear = parseInt(m[2]); stmtMonth = mNum; break; }
+    }
+  }
+
+  function resolveYear(day, month) {
+    // Pick the closest year: prefer stmtYear, fall back to nowY
+    if (month === stmtMonth) return stmtYear;
+    if (Math.abs(month - stmtMonth) <= 2) return stmtYear;
+    if (month > stmtMonth && stmtMonth <= 2) return stmtYear - 1;
+    return stmtYear;
+  }
+
+  const PATTERNS = [
+    // Nubank / Inter: "15 mai Descrição 1.234,56" or "15 maio Descrição 1.234,56"
+    /^(\d{1,2})\s+(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)\w{0,6}\s+(.{2,60}?)\s+([\d.]+,\d{2})\s*$/i,
+    // Standard DD/MM/YYYY or DD/MM: "15/05/2026 Descrição 1.234,56"
+    /(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.{2,60}?)\s+([\d.]+,\d{2})\s*$/,
+    // Bradesco / Santander compact: "15/05  DESCRIÇÃO  1234,56"
+    /(\d{2}\/\d{2})\s{2,}(.{2,50}?)\s{2,}([\d.]+,\d{2})/,
+    // C6 / Sicoob — "15/05 Descrição 1.234,56 BRL"
+    /(\d{2}\/\d{2})\s+(.{2,60}?)\s+([\d.]+,\d{2})\s*(?:BRL|USD|EUR)?$/i,
+  ];
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.length < 8 || SKIP.test(line)) continue;
+    // Skip lines that are clearly just numbers or headers
+    if (/^[\d\s\/.,R$%]+$/.test(line) && line.length < 14) continue;
+
+    for (const pat of PATTERNS) {
+      const m = pat.exec(line);
+      if (!m) continue;
+
+      let date = null, desc = '', amount = 0;
+
+      if (/^\d{1,2}$/.test(m[1])) {
+        // Nubank style: day + month word
+        const mNum = MONTHS[m[2].toLowerCase().slice(0,3)];
+        if (!mNum) break;
+        const yr = resolveYear(parseInt(m[1]), mNum);
+        date = `${yr}-${String(mNum).padStart(2,'0')}-${String(m[1]).padStart(2,'0')}`;
+        desc = m[3].trim();
+        amount = parseFloat(m[4].replace(/\./g,'').replace(',','.'));
+      } else {
+        // DD/MM[/YYYY] style
+        const dm = /(\d{2})\/(\d{2})(?:\/(\d{2,4}))?/.exec(m[1]);
+        if (!dm) break;
+        const yr = dm[3] ? (dm[3].length===2 ? 2000+parseInt(dm[3]) : parseInt(dm[3])) : resolveYear(parseInt(dm[1]), parseInt(dm[2]));
+        date = `${yr}-${dm[2]}-${dm[1]}`;
+        desc = m[2].trim();
+        amount = parseFloat(m[3].replace(/\./g,'').replace(',','.'));
+      }
+
+      // Sanity checks
+      if (!date || !desc || amount <= 0 || amount > 60000 || desc.length < 2) break;
+      // Skip if description looks like a bank code / number only
+      if (/^[\d\s*.-]+$/.test(desc)) break;
+
+      const key = `${date}_${amount.toFixed(2)}_${desc.slice(0,12)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        results.push({id:uid(), date, desc, amount, category:autoCategory(desc), cardId, include:true});
+      }
+      break;
+    }
+  }
+
+  return results.sort((a,b) => a.date.localeCompare(b.date));
+}
+
+function autoCategory(desc) {
+  const d = desc.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  if (/ifood|rappi|uber\s?eats|james|mcdonalds|burger|pizza|restauran|lanche|padaria|mercado|supermercado|hortifruti|acougue|panificadora|sorveteria|acai|sushi|churrasco|refeicao|cafe|doce|confeit|pao|food|grocery/.test(d)) return 'Alimentação';
+  if (/uber(?!\s?eats)|99pop|99\s?taxi|cabify|taxi|gasolina|combustivel|alcool|etanol|posto\s|estacion|pedagio|onibus|metro|metr|trem|passagem\s|rodoviaria|autopeça|troca\s*de\s*oleo|borracharia|oficina|locadora|rent\s*a\s*car|localiza|movida|unidas/.test(d)) return 'Transporte';
+  if (/netflix|spotify|amazon\s?prime|youtube\s?premium|disney|hbo|globoplay|paramount|apple\s?tv|deezer|crunchyroll|telecine|mubi|xbox\s?game\s?pass|playstation\s?plus|nintendo|steam\s?sub/.test(d)) return 'Assinaturas';
+  if (/farmacia|drogaria|drogasil|raia|pacheco|ultrafarma|pague\s*menos|hospital|clinica|medic|laborat|dentist|otica|oculista|saude|health|plano\s*de\s*saude|unimed|hapvida|amil/.test(d)) return 'Saúde';
+  if (/udemy|coursera|alura|livro|livraria|escola|faculdade|universidade|educacao|apostila|material\s*escolar|descomplica|estrategia|enem/.test(d)) return 'Educação';
+  if (/cinema|cinemark|cinepolis|uci|show|teatro|ingresso|ticketmaster|sympla|eventbrite|lazer|game\s*(?!pass)|steam(?!\s*sub)|playstation(?!\s*plus)|xbox(?!\s*game)|nintendo(?!\s*switch\s*online)/.test(d)) return 'Lazer';
+  if (/hotel|airbnb|booking|hostel|pousada|resort|decolar|latam|gol|azul|avianca|passagem\s*aer|aeroporto|trip\.com/.test(d)) return 'Viagens';
+  if (/claro|vivo|tim\b|oi\s*s|net\b|nextel|energia|enel|cemig|cpfl|light\b|sabesp|copasa|saneago|cosern|cemar|agua\b|luz\b|gas\b|conta\s*de/.test(d)) return 'Contas Fixas';
+  return 'Outros';
+}
+
+function renderPdfTable() {
+  const total = pdfTxns.filter(t=>t.include).reduce((s,t)=>s+t.amount,0);
+  const selCount = pdfTxns.filter(t=>t.include).length;
+
+  document.getElementById('pdf-stats').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <div class="chip" style="background:rgba(0,200,150,.1);color:var(--green)">✅ ${selCount} selecionadas</div>
+      <div class="chip" style="background:rgba(255,77,109,.1);color:var(--red)">Total: ${fm(total)}</div>
+      <div style="flex:1"></div>
+      <button class="btn btn-s btn-sm" onclick="selectAllPdf(true)">Todas</button>
+      <button class="btn btn-s btn-sm" onclick="selectAllPdf(false)">Nenhuma</button>
+    </div>`;
+
+  document.getElementById('pdf-confirm-btn').textContent = `✅ Importar ${selCount} transação(ões)`;
+
+  const catOpts = S.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+
+  document.getElementById('pdf-table-wrap').innerHTML = `
+    <table class="pdf-tbl">
+      <thead><tr>
+        <th style="width:28px"></th>
+        <th style="width:90px">Data</th>
+        <th>Descrição</th>
+        <th style="width:130px">Categoria</th>
+        <th style="width:90px;text-align:right">Valor</th>
+      </tr></thead>
+      <tbody>
+      ${pdfTxns.map((t,i)=>`
+        <tr style="opacity:${t.include?1:.4}">
+          <td><input type="checkbox" ${t.include?'checked':''} onchange="pdfTxns[${i}].include=this.checked;renderPdfTable()"></td>
+          <td><input type="date" value="${t.date}" onchange="pdfTxns[${i}].date=this.value"></td>
+          <td><input type="text" value="${t.desc}" onchange="pdfTxns[${i}].desc=this.value" style="min-width:120px"></td>
+          <td><select onchange="pdfTxns[${i}].category=this.value">${catOpts.replace(`value="${t.category}"`,`value="${t.category}" selected`)}</select></td>
+          <td style="text-align:right;font-weight:700;color:var(--red);white-space:nowrap">${fm(t.amount)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function selectAllPdf(val) {
+  pdfTxns.forEach(t => t.include = val);
+  renderPdfTable();
+}
+
+function confirmPdfImport() {
+  const toAdd = pdfTxns.filter(t => t.include);
+  if (!toAdd.length) { toast('Selecione pelo menos uma transação', 'error'); return; }
+
+  // Avoid importing duplicates already in S.txns
+  let dupes = 0;
+  toAdd.forEach(t => {
+    const isDupe = S.txns.some(e => e.date === t.date && Math.abs(Number(e.value) - t.amount) < 0.01 && e.desc.slice(0,10).toLowerCase() === t.desc.slice(0,10).toLowerCase());
+    if (isDupe) { dupes++; return; }
+    S.txns.push({id:uid(), type:'expense', desc:t.desc, value:t.amount, category:t.category, date:t.date, payment:'credit', cardId:t.cardId, obs:'Importado via PDF'});
+  });
+
+  persist();
+  closePdfMo();
+  rendCards();
+  const imported = toAdd.length - dupes;
+  toast(`${imported} transação(ões) importada(s)!${dupes?' ('+dupes+' duplicata(s) ignorada(s))':''} 📄`);
+  if (document.getElementById('sec-extrato').classList.contains('active')) rendExt();
+}
 
 // ── EXPORT / IMPORT ────────────────────────────────────────
 function exportData(){
