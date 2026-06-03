@@ -834,34 +834,28 @@ function hydrate(){
   S.debts=get('fp_debts')||[];
 }
 
-// ── DEMO DATA (exemplos mínimos) ───────────────────────────
+// ── DADOS INICIAIS (mínimos) ────────────────────────────────
 function seedDemo(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   const dt=(mo,d,yr=y)=>`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
-  // 2 cartões de exemplo
+  // 2 cartões como referência de estrutura (edite com os seus dados)
   S.cards=[
     {id:'card1',name:'Nubank',limit:5000,closeDay:15,dueDay:22,color:'purple'},
     {id:'card2',name:'Itaú Visa',limit:8000,closeDay:8,dueDay:15,color:'orange'}
   ];
-  // 2 contas fixas de exemplo
-  S.bills=[
-    {id:'b1',name:'Aluguel',value:1500,dueDay:5,category:'Contas Fixas',paid:[]},
-    {id:'b2',name:'Internet',value:99.90,dueDay:10,category:'Assinaturas',paid:[]},
-  ];
-  // orçamentos padrão
-  S.budgets={Alimentação:800,Transporte:400,Lazer:300,Saúde:200,Assinaturas:150};
-  // sem investimentos — usuário cadastra os próprios
+  S.bills=[];
+  S.budgets={};
   S.investments=[];
-  // sem metas — usuário cria as próprias
   S.goals=[];
-  // sem dívidas — usuário cadastra as próprias
   S.debts=[];
-  // apenas 3 lançamentos para mostrar como funciona
+
+  // 1 receita + 1 despesa de exemplo no mês atual — tudo zerado
   S.txns=[
-    {id:uid(),type:'income',desc:'Salário',value:0,category:'Salário',date:dt(m,5),obs:'Edite com seu valor real',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Supermercado',value:0,category:'Alimentação',date:dt(m,8),obs:'Exemplo — edite ou apague',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Exemplo de gasto',value:0,category:'Outros',date:dt(m,10),obs:'Clique em ✏️ para editar',payment:'pix'},
+    {id:uid(),type:'income',desc:'Meu Salário',value:0,category:'Salário',
+     date:dt(m,5),obs:'✏️ Edite com seu valor real',payment:'pix'},
+    {id:uid(),type:'expense',desc:'Exemplo de Gasto',value:0,category:'Outros',
+     date:dt(m,10),obs:'✏️ Edite ou apague este lançamento',payment:'pix'},
   ];
   persist();
 }
@@ -1854,9 +1848,19 @@ function importData(input){
 }
 
 // ── INIT ───────────────────────────────────────────────────
+const SEED_VER=4; // incremente aqui para forçar reset dos dados de exemplo
+
 function init(){
-  hydrate();
-  if(!S.txns.length||!S.investments.length) seedDemo();
+  const sv=parseInt(localStorage.getItem('fp_sv')||'0');
+  if(sv<SEED_VER){
+    // limpa só os dados de demo (não dados reais do usuário em versões futuras)
+    localStorage.clear();
+    hydrate();
+    seedDemo();
+    localStorage.setItem('fp_sv',SEED_VER);
+  } else {
+    hydrate();
+  }
   document.getElementById('f-month').value=mk(S.cm,S.cy);
   rendDash();initNovo();
 }
