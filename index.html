@@ -834,28 +834,49 @@ function hydrate(){
   S.debts=get('fp_debts')||[];
 }
 
-// ── DADOS INICIAIS (mínimos) ────────────────────────────────
+// ── DADOS INICIAIS — 1 exemplo por seção ───────────────────
 function seedDemo(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
   const dt=(mo,d,yr=y)=>`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
-  // 2 cartões como referência de estrutura (edite com os seus dados)
+  // 1 cartão de exemplo
   S.cards=[
-    {id:'card1',name:'Nubank',limit:5000,closeDay:15,dueDay:22,color:'purple'},
-    {id:'card2',name:'Itaú Visa',limit:8000,closeDay:8,dueDay:15,color:'orange'}
+    {id:'card1',name:'Meu Cartão',limit:3000,closeDay:15,dueDay:22,color:'purple'}
   ];
-  S.bills=[];
-  S.budgets={};
-  S.investments=[];
-  S.goals=[];
-  S.debts=[];
 
-  // 1 receita + 1 despesa de exemplo no mês atual — tudo zerado
+  // 1 conta fixa de exemplo
+  S.bills=[
+    {id:'b1',name:'Aluguel',value:1200,dueDay:5,category:'Contas Fixas',paid:[]}
+  ];
+
+  // 1 orçamento de exemplo
+  S.budgets={Alimentação:600};
+
+  // 1 investimento de exemplo
+  S.investments=[
+    {id:'i1',name:'Poupança',institution:'Meu Banco',type:'poupanca',
+     invested:1000,currentValue:1010,date:dt(m,1),notes:'Exemplo — edite com seus dados'}
+  ];
+
+  // 1 meta de exemplo
+  S.goals=[
+    {id:'g1',name:'Fundo de Emergência',icon:'🛡️',color:'#00c896',
+     category:'Emergência',targetAmount:10000,currentAmount:1010,deadline:''}
+  ];
+
+  // 1 dívida de exemplo
+  S.debts=[
+    {id:'d1',creditor:'Credor Exemplo',type:'Cartão de Crédito',
+     originalAmount:1500,currentAmount:1800,negotiatedAmount:0,
+     status:'pendente',notes:'Edite com sua dívida real',date:dt(m,1)}
+  ];
+
+  // 1 receita + 1 despesa no mês atual
   S.txns=[
-    {id:uid(),type:'income',desc:'Meu Salário',value:0,category:'Salário',
-     date:dt(m,5),obs:'✏️ Edite com seu valor real',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Exemplo de Gasto',value:0,category:'Outros',
-     date:dt(m,10),obs:'✏️ Edite ou apague este lançamento',payment:'pix'},
+    {id:uid(),type:'income',desc:'Salário',value:3500,category:'Salário',
+     date:dt(m,5),obs:'',payment:'pix'},
+    {id:uid(),type:'expense',desc:'Supermercado',value:280,category:'Alimentação',
+     date:dt(m,10),obs:'',payment:'debit'}
   ];
   persist();
 }
@@ -894,6 +915,9 @@ function closeSidebar(){
 // ── NAVIGATION ─────────────────────────────────────────────
 const SEC_TITLES={dashboard:'Dashboard',novo:'Novo Lançamento',extrato:'Extrato',cartoes:'Cartões',contas:'Contas Fixas',dividas:'Dívidas',investimentos:'Investimentos',metas:'Metas',orcamento:'Orçamento',categorias:'Categorias'};
 function nav(sec){
+  // valida se a seção existe, senão vai pro dashboard
+  if(!document.getElementById('sec-'+sec)) sec='dashboard';
+  localStorage.setItem('fp_nav',sec);
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni,.bni').forEach(n=>n.classList.remove('active'));
   document.getElementById('sec-'+sec).classList.add('active');
@@ -1418,7 +1442,7 @@ function rendCats(){
       ${cat.def?'<div style="font-size:.68rem;color:var(--text2)">Padrão</div>':''}
       <div style="display:flex;gap:5px;margin-top:3px">
         <button class="btn btn-s btn-sm" onclick="openCatMo('${cat.id}')">✏️</button>
-        ${!cat.def?`<button class="btn btn-d btn-sm" onclick="delCat('${cat.id}')">🗑️</button>`:''}
+        <button class="btn btn-d btn-sm" onclick="delCat('${cat.id}')">🗑️</button>
       </div>
     </div>`).join('');
 }
@@ -1434,7 +1458,14 @@ function saveCat(){
   else{if(S.cats.find(c=>c.name.toLowerCase()===name.toLowerCase())){toast('Categoria já existe','error');return}S.cats.push({id:uid(),name,icon,color,def:false});}
   persist();closeMo('mo-cat');rendCats();toast('Categoria salva!');
 }
-function delCat(id){const cat=S.cats.find(c=>c.id===id);if(!cat||cat.def)return;if(!confirm(`Excluir "${cat.name}"?`))return;S.cats=S.cats.filter(c=>c.id!==id);persist();rendCats();toast('Excluída')}
+function delCat(id){
+  const cat=S.cats.find(c=>c.id===id);if(!cat)return;
+  const emUso=S.txns.filter(t=>t.category===cat.name).length+S.bills.filter(b=>b.category===cat.name).length;
+  const aviso=emUso?`\n\n⚠️ Atenção: ${emUso} lançamento(s) usam esta categoria. Eles ficarão sem categoria.`:'';
+  if(!confirm(`Excluir a categoria "${cat.name}"?${aviso}`))return;
+  S.cats=S.cats.filter(c=>c.id!==id);
+  persist();rendCats();toast('Categoria excluída');
+}
 
 // ── DÍVIDAS ────────────────────────────────────────────────
 const DIV_STATUS={
@@ -1848,12 +1879,11 @@ function importData(input){
 }
 
 // ── INIT ───────────────────────────────────────────────────
-const SEED_VER=4; // incremente aqui para forçar reset dos dados de exemplo
+const SEED_VER=5;
 
 function init(){
   const sv=parseInt(localStorage.getItem('fp_sv')||'0');
   if(sv<SEED_VER){
-    // limpa só os dados de demo (não dados reais do usuário em versões futuras)
     localStorage.clear();
     hydrate();
     seedDemo();
@@ -1862,7 +1892,10 @@ function init(){
     hydrate();
   }
   document.getElementById('f-month').value=mk(S.cm,S.cy);
-  rendDash();initNovo();
+  initNovo();
+  // restaura a última seção visitada (persiste entre reloads)
+  const lastSec=localStorage.getItem('fp_nav')||'dashboard';
+  nav(lastSec);
 }
 init();
 </script>
