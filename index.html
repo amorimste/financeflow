@@ -385,7 +385,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
           </div>
           <div class="fr">
             <div class="fg"><label>Categoria *</label><select id="e-cat"></select></div>
-            <div class="fg"><label>Data *</label><input type="date" id="e-date"></div>
+            <div class="fg"><label>Data *</label><input type="date" id="e-date" onchange="updBillingInfo()"></div>
           </div>
           <div class="fg"><label>Forma de Pagamento *</label>
             <select id="e-pay" onchange="updPay()">
@@ -393,12 +393,19 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
               <option value="credit-installment">Crédito Parcelado</option><option value="pix">PIX</option><option value="cash">Dinheiro</option>
             </select>
           </div>
-          <div id="e-card-f" class="fg" style="display:none"><label>Cartão</label><select id="e-card"></select></div>
+          <div id="e-card-f" class="fg" style="display:none"><label>Cartão</label><select id="e-card" onchange="updBillingInfo()"></select></div>
           <div id="e-inst-f" style="display:none">
             <div class="fr">
-              <div class="fg"><label>Parcela Atual</label><input type="number" id="e-ic" placeholder="1" inputmode="numeric"></div>
-              <div class="fg"><label>Total de Parcelas</label><input type="number" id="e-it" placeholder="6" inputmode="numeric"></div>
+              <div class="fg"><label>Total de Parcelas</label><input type="number" id="e-it" placeholder="6" inputmode="numeric" min="2"></div>
+              <div class="fg" style="display:flex;align-items:flex-end;padding-bottom:1px">
+                <div style="font-size:.78rem;color:var(--text2)">Valor por parcela = total ÷ parcelas</div>
+              </div>
             </div>
+          </div>
+          <!-- Banner: qual fatura receberá esta despesa -->
+          <div id="billing-info" style="display:none;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:9px;padding:10px 14px;font-size:.83rem;color:var(--blue);margin-bottom:2px">
+            📅 Esta despesa vai para a <strong id="billing-label">fatura de —</strong>
+            <span style="color:var(--text2)"> · fecha em <strong id="billing-close">—</strong></span>
           </div>
           <div class="fg"><label>Observação</label><textarea id="e-obs" rows="2" placeholder="Opcional..."></textarea></div>
           <button class="btn btn-p" onclick="saveExp()">💾 Salvar Despesa</button>
@@ -675,6 +682,19 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="fr">
       <div class="fg"><label>Dia Vencimento</label><input type="number" id="bl-due" min="1" max="31" placeholder="10" inputmode="numeric"></div>
       <div class="fg"><label>Categoria</label><select id="bl-cat"></select></div>
+    </div>
+    <div class="fg"><label>Onde é cobrado?</label>
+      <select id="bl-pay" onchange="updBillPay()">
+        <option value="pix">💸 PIX / Débito</option>
+        <option value="credit">💳 Cartão de Crédito</option>
+      </select>
+    </div>
+    <div id="bl-card-row" class="fg" style="display:none">
+      <label>Qual Cartão?</label>
+      <select id="bl-card"></select>
+      <div id="bl-billing-info" style="display:none;margin-top:6px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:8px 12px;font-size:.78rem;color:var(--blue)">
+        📅 Cobrado na <strong id="bl-billing-label">fatura de —</strong> · fecha dia <strong id="bl-billing-close">—</strong>
+      </div>
     </div>
     <div class="mdf">
       <button class="btn btn-s" onclick="closeMo('mo-bill')">Cancelar</button>
@@ -1308,6 +1328,27 @@ function updPay(){
   const isC=p==='credit'||p==='credit-installment';
   document.getElementById('e-card-f').style.display=isC&&S.cards.length?'block':'none';
   document.getElementById('e-inst-f').style.display=p==='credit-installment'?'block':'none';
+  updBillingInfo();
+}
+
+function updBillingInfo(){
+  const p=document.getElementById('e-pay').value;
+  const bi=document.getElementById('billing-info');
+  if(p!=='credit'&&p!=='credit-installment'){bi.style.display='none';return}
+  const cardId=document.getElementById('e-card').value;
+  const card=getCard(cardId);
+  const dateVal=document.getElementById('e-date').value;
+  if(!card||!dateVal){bi.style.display='none';return}
+  // Calcula em qual fatura cai
+  const d=new Date(dateVal+'T12:00:00');
+  const day=d.getDate(),m=d.getMonth(),y=d.getFullYear();
+  let billM,billY;
+  if(day<=card.closeDay){billM=m;billY=y}
+  else{billM=m===11?0:m+1;billY=m===11?y+1:y}
+  const closeFormatted=`${String(card.closeDay).padStart(2,'0')}/${String(billM+1).padStart(2,'0')}/${billY}`;
+  document.getElementById('billing-label').textContent=`fatura de ${MN[billM]}/${billY} (${card.name})`;
+  document.getElementById('billing-close').textContent=closeFormatted;
+  bi.style.display='block';
 }
 function saveExp(){
   const desc=document.getElementById('e-desc').value.trim();
@@ -1624,41 +1665,124 @@ function rendBills(){
   document.getElementById('bills-alerts').innerHTML=alts;
   const pending=S.bills.filter(b=>!(b.paid||[]).includes(mkey));
   const paid=S.bills.filter(b=>(b.paid||[]).includes(mkey));
-  const bH=(b,isPaid)=>`<div class="bi-item ${isPaid?'paid':''}">
-    <div class="bck ${isPaid?'checked':''}" onclick="toggleBill('${b.id}')">${isPaid?'✓':''}</div>
-    <div style="flex:1;min-width:0">
-      <div style="font-weight:500;font-size:.88rem">${b.name}</div>
-      <div style="font-size:.74rem;color:var(--text2)">Dia ${b.dueDay} · ${b.category}</div>
-    </div>
-    <div style="font-weight:700;color:${isPaid?'var(--text2)':'var(--red)'};font-size:.9rem;white-space:nowrap">${fm(b.value)}</div>
-    <div style="display:flex;gap:5px;flex-shrink:0">
-      <button class="btn btn-s btn-sm" onclick="openBillMo('${b.id}')">✏️</button>
-      <button class="btn btn-d btn-sm" onclick="delBill('${b.id}')">🗑️</button>
-    </div>
-  </div>`;
+
+  const bH=(b,isPaid)=>{
+    const card=b.cardId?getCard(b.cardId):null;
+    const isCredit=b.paymentMethod==='credit';
+    // Se for crédito, calcula em qual fatura cai pelo dia do vencimento
+    let billInfo='';
+    if(isCredit&&card){
+      const d=b.dueDay,m=now.getMonth(),y=now.getFullYear();
+      const billM=d<=card.closeDay?m:(m===11?0:m+1);
+      const billY=d>card.closeDay&&m===11?y+1:y;
+      billInfo=` · 📅 Fatura ${MN[billM].slice(0,3)}/${billY}`;
+    }
+    const payLabel=isCredit&&card?`💳 ${card.name}${billInfo}`:'💸 PIX/Débito';
+    return`<div class="bi-item ${isPaid?'paid':''}">
+      <div class="bck ${isPaid?'checked':''}" onclick="toggleBill('${b.id}')">${isPaid?'✓':''}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:.88rem">${b.name}</div>
+        <div style="font-size:.74rem;color:var(--text2)">Dia ${b.dueDay} · ${b.category}</div>
+        <div style="font-size:.72rem;color:${isCredit?'var(--blue)':'var(--text2)'};margin-top:1px">${payLabel}</div>
+      </div>
+      <div style="font-weight:700;color:${isPaid?'var(--text2)':'var(--red)'};font-size:.9rem;white-space:nowrap">${fm(b.value)}</div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-s btn-sm" onclick="openBillMo('${b.id}')">✏️</button>
+        <button class="btn btn-d btn-sm" onclick="delBill('${b.id}')">🗑️</button>
+      </div>
+    </div>`;
+  };
+
   document.getElementById('bp').innerHTML=pending.length?pending.map(b=>bH(b,false)).join(''):`<div style="color:var(--text2);font-size:.875rem;padding:14px">Nenhuma pendente 🎉</div>`;
   document.getElementById('bpd').innerHTML=paid.length?paid.map(b=>bH(b,true)).join(''):`<div style="color:var(--text2);font-size:.875rem;padding:14px">Nenhuma paga ainda</div>`;
 }
+
+function updBillPay(){
+  const p=document.getElementById('bl-pay').value;
+  const cardRow=document.getElementById('bl-card-row');
+  cardRow.style.display=p==='credit'?'block':'none';
+  if(p==='credit') updBillBillingInfo();
+}
+
+function updBillBillingInfo(){
+  const cardId=document.getElementById('bl-card').value;
+  const dueDay=parseInt(document.getElementById('bl-due').value)||0;
+  const card=getCard(cardId);
+  const bi=document.getElementById('bl-billing-info');
+  if(!card||!dueDay){bi.style.display='none';return}
+  const now=new Date(),m=now.getMonth(),y=now.getFullYear();
+  const billM=dueDay<=card.closeDay?m:(m===11?0:m+1);
+  const billY=dueDay>card.closeDay&&m===11?y+1:y;
+  document.getElementById('bl-billing-label').textContent=`fatura de ${MN[billM]}/${billY} (${card.name})`;
+  document.getElementById('bl-billing-close').textContent=`${card.closeDay}`;
+  bi.style.display='block';
+}
+
 function toggleBill(id){
   const bill=S.bills.find(b=>b.id===id);if(!bill)return;
   const now=new Date(),mkey=mk(now.getMonth(),now.getFullYear());
   if(!bill.paid) bill.paid=[];
   const isPaid=bill.paid.includes(mkey);
-  if(isPaid){bill.paid=bill.paid.filter(m=>m!==mkey);S.txns=S.txns.filter(t=>t.billId!==id||!t.date.startsWith(mkey));toast('Marcada como pendente');}
-  else{bill.paid.push(mkey);S.txns.push({id:uid(),type:'expense',desc:bill.name,value:bill.value,category:bill.category,date:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(bill.dueDay).padStart(2,'0')}`,payment:'pix',obs:'Conta fixa',billId:id});toast(`${bill.name} paga! ✅`);}
+  if(isPaid){
+    bill.paid=bill.paid.filter(m=>m!==mkey);
+    S.txns=S.txns.filter(t=>t.billId!==id||!t.date.startsWith(mkey));
+    toast('Marcada como pendente');
+  }else{
+    bill.paid.push(mkey);
+    const isCredit=bill.paymentMethod==='credit';
+    const txnDate=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(bill.dueDay).padStart(2,'0')}`;
+    S.txns.push({
+      id:uid(),type:'expense',desc:bill.name,value:bill.value,
+      category:bill.category,date:txnDate,
+      payment:isCredit?'credit':'pix',
+      cardId:isCredit?bill.cardId:null,
+      obs:'Conta fixa recorrente',billId:id
+    });
+    toast(`${bill.name} ${isCredit?'lançado no cartão':'pago'}! ✅`);
+  }
   persist();rendBills();
 }
+
 function openBillMo(id){
-  const bc=document.getElementById('bl-cat');bc.innerHTML=S.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
-  if(id){const b=S.bills.find(b=>b.id===id);if(!b)return;document.getElementById('bill-mo-title').textContent='Editar Conta';document.getElementById('bl-id').value=id;document.getElementById('bl-name').value=b.name;document.getElementById('bl-val').value=b.value;document.getElementById('bl-due').value=b.dueDay;bc.value=b.category;}
-  else{document.getElementById('bill-mo-title').textContent='Nova Conta Fixa';['bl-id','bl-name','bl-val','bl-due'].forEach(i=>document.getElementById(i).value='');}
+  const bc=document.getElementById('bl-cat');
+  bc.innerHTML=S.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+  // Popula cards
+  const blCard=document.getElementById('bl-card');
+  blCard.innerHTML=S.cards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  blCard.onchange=updBillBillingInfo;
+
+  if(id){
+    const b=S.bills.find(b=>b.id===id);if(!b)return;
+    document.getElementById('bill-mo-title').textContent='Editar Conta';
+    document.getElementById('bl-id').value=id;
+    document.getElementById('bl-name').value=b.name;
+    document.getElementById('bl-val').value=b.value;
+    document.getElementById('bl-due').value=b.dueDay;
+    bc.value=b.category;
+    document.getElementById('bl-pay').value=b.paymentMethod||'pix';
+    if(b.cardId) blCard.value=b.cardId;
+  }else{
+    document.getElementById('bill-mo-title').textContent='Nova Conta Fixa';
+    ['bl-id','bl-name','bl-val','bl-due'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('bl-pay').value='pix';
+  }
+  updBillPay();
   openMo('mo-bill');
 }
+
 function saveBill(){
-  const id=document.getElementById('bl-id').value,name=document.getElementById('bl-name').value.trim(),value=parseFloat(document.getElementById('bl-val').value),dueDay=parseInt(document.getElementById('bl-due').value),category=document.getElementById('bl-cat').value;
+  const id=document.getElementById('bl-id').value;
+  const name=document.getElementById('bl-name').value.trim();
+  const value=parseFloat(document.getElementById('bl-val').value);
+  const dueDay=parseInt(document.getElementById('bl-due').value);
+  const category=document.getElementById('bl-cat').value;
+  const paymentMethod=document.getElementById('bl-pay').value;
+  const cardId=paymentMethod==='credit'?document.getElementById('bl-card').value:null;
   if(!name||!value||!dueDay){toast('Preencha todos os campos','error');return}
-  if(id) Object.assign(S.bills.find(b=>b.id===id),{name,value,dueDay,category});
-  else S.bills.push({id:uid(),name,value,dueDay,category,paid:[]});
+  if(paymentMethod==='credit'&&!S.cards.length){toast('Cadastre um cartão primeiro','error');return}
+  const obj={name,value,dueDay,category,paymentMethod,cardId};
+  if(id) Object.assign(S.bills.find(b=>b.id===id),obj);
+  else S.bills.push({id:uid(),...obj,paid:[]});
   persist();closeMo('mo-bill');rendBills();toast('Conta fixa salva!');
 }
 function delBill(id){if(!confirm('Excluir conta?'))return;S.bills=S.bills.filter(b=>b.id!==id);persist();rendBills();toast('Excluída')}
