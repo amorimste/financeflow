@@ -190,33 +190,84 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:768px){
+  /* sidebar drawer */
   #sidebar{transform:translateX(-100%)}
   #sidebar.open{transform:translateX(0)}
   #overlay.show{display:block}
+  /* mobile chrome */
   .mob-hdr{display:flex}
   .bnav{display:block}
-  #main{margin-left:0;padding-top:56px;padding-bottom:calc(var(--bnh) + env(safe-area-inset-bottom))}
-  .ph{padding:18px 16px 0}
-  .ca{padding:0 16px 24px}
-  .g4{grid-template-columns:repeat(2,1fr);gap:10px}
-  .g3{grid-template-columns:repeat(2,1fr);gap:10px}
-  .g2{grid-template-columns:1fr;gap:10px}
-  .fr{grid-template-columns:1fr}
-  .sc .val{font-size:1.2rem}
-  .ph h1{font-size:1.25rem}
-  .tabs{width:100%}
-  .tab{flex:1;text-align:center;padding:7px 8px}
-  .fb{flex-direction:column}
+  #main{margin-left:0;padding-top:56px;padding-bottom:calc(var(--bnh) + env(safe-area-inset-bottom) + 4px)}
+  /* spacing */
+  .ph{padding:16px 14px 0}
+  .ph h1{font-size:1.15rem}
+  .ph p{font-size:.78rem}
+  .ca{padding:0 14px 20px}
+  /* grids */
+  .g4{grid-template-columns:repeat(2,1fr);gap:9px}
+  .g3{grid-template-columns:1fr;gap:9px}
+  .g2{grid-template-columns:1fr;gap:9px}
+  .fr{grid-template-columns:1fr;gap:9px}
+  /* summary cards */
+  .sc .val{font-size:1.1rem}
+  .sc{padding:14px}
+  /* charts */
+  .cc{padding:14px}
+  canvas{max-height:200px}
+  /* forms — prevent iOS zoom (needs 16px min) */
+  .fg input,.fg select,.fg textarea,.fb input,.fb select{font-size:16px}
+  /* tabs */
+  .tabs{width:100%;flex-wrap:nowrap}
+  .tab{flex:1;text-align:center;padding:7px 4px;font-size:.78rem}
+  /* filter bar */
+  .fb{flex-direction:column;gap:8px}
   .fb input,.fb select{width:100%}
-  .mnav{justify-content:center}
-  .tact{gap:4px}
-  .tc-cont{bottom:76px;right:12px}
-  .cg{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  /* transactions */
+  .ti{padding:9px 10px;gap:8px}
+  .tdate{display:none}
+  .tam{font-size:.85rem}
+  .tact .btn-sm{padding:5px 8px;font-size:.72rem}
+  /* budget */
+  .bui .buh{flex-direction:column;align-items:flex-start;gap:3px}
+  .bui>div:last-child{flex-wrap:wrap}
+  .bui>div:last-child input[type=number]{width:100%}
+  /* investment cards */
+  .inv-card{flex-wrap:wrap;gap:10px}
+  .inv-vals{text-align:left;width:100%}
+  /* goal cards */
+  .goal-card{padding:14px}
+  /* credit card visual */
+  .cv{padding:16px}
+  /* modals */
   .mo{align-items:flex-end}
-  .md{border-radius:20px 20px 0 0;max-height:92vh}
+  .md{border-radius:20px 20px 0 0;max-height:92vh;padding:20px}
   .mdf{flex-direction:column}
   .mdf .btn{width:100%}
-  .btn-p{font-size:.9rem;padding:13px}
+  .btn-p{font-size:.9rem;padding:12px}
+  /* misc */
+  .mnav{justify-content:center}
+  .tact{gap:4px}
+  .tc-cont{bottom:76px;right:12px;max-width:calc(100vw - 24px)}
+  .toast{max-width:280px}
+  .cg{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  /* specific grids that should stay 2-col on mobile */
+  #inv-sum-cards{grid-template-columns:repeat(2,1fr)!important}
+  #goal-sum-cards{grid-template-columns:repeat(2,1fr)!important}
+  #div-sum-cards{grid-template-columns:repeat(2,1fr)!important}
+  #cards-grid{grid-template-columns:1fr!important}
+  #goals-grid{grid-template-columns:1fr!important}
+  /* sidebar footer */
+  #sidebar>div:last-child button,#sidebar>div:last-child label{font-size:.78rem;padding:8px 10px}
+  /* pdf table scroll on mobile */
+  #pdf-table-wrap{overflow-x:auto}
+  .pdf-tbl{min-width:520px}
+}
+@media(max-width:400px){
+  .g4{grid-template-columns:1fr}
+  #inv-sum-cards{grid-template-columns:1fr!important}
+  #goal-sum-cards{grid-template-columns:1fr!important}
+  #div-sum-cards{grid-template-columns:1fr!important}
+  .sc .val{font-size:1rem}
 }
 @media(min-width:769px){
   .mo{align-items:center}
@@ -245,6 +296,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="ni" data-sec="extrato" onclick="nav('extrato')"><span class="ic">📋</span>Extrato</div>
     <div class="ni" data-sec="cartoes" onclick="nav('cartoes')"><span class="ic">💳</span>Cartões</div>
     <div class="ni" data-sec="contas" onclick="nav('contas')"><span class="ic">🔁</span>Contas Fixas</div>
+    <div class="ni" data-sec="dividas" onclick="nav('dividas')"><span class="ic">💸</span>Dívidas</div>
     <div class="ni" data-sec="investimentos" onclick="nav('investimentos')"><span class="ic">💹</span>Investimentos</div>
     <div class="ni" data-sec="metas" onclick="nav('metas')"><span class="ic">🎯</span>Metas</div>
     <div class="ni" data-sec="orcamento" onclick="nav('orcamento')"><span class="ic">📊</span>Orçamento</div>
@@ -389,6 +441,18 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
 </div>
 
+<!-- DÍVIDAS -->
+<div id="sec-dividas" class="sec">
+  <div class="ph"><h1>Dívidas</h1><p>Serasa, pendências e negociações</p></div>
+  <div class="ca">
+    <div class="g4" id="div-sum-cards" style="margin-bottom:14px"></div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+      <button class="btn btn-s" onclick="openDivMo()">+ Adicionar Dívida</button>
+    </div>
+    <div id="div-list"></div>
+  </div>
+</div>
+
 <!-- INVESTIMENTOS -->
 <div id="sec-investimentos" class="sec">
   <div class="ph"><h1>Investimentos</h1><p>Portfólio e poupança</p></div>
@@ -444,8 +508,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <button class="bni active" data-sec="dashboard" onclick="nav('dashboard')"><span class="bi2">🏠</span>Início</button>
     <button class="bni" data-sec="novo" onclick="nav('novo')"><span class="bi2">➕</span>Lançar</button>
     <button class="bni" data-sec="extrato" onclick="nav('extrato')"><span class="bi2">📋</span>Extrato</button>
-    <button class="bni" data-sec="investimentos" onclick="nav('investimentos')"><span class="bi2">💹</span>Invest.</button>
-    <button class="bni" data-sec="metas" onclick="nav('metas')"><span class="bi2">🎯</span>Metas</button>
+    <button class="bni" data-sec="dividas" onclick="nav('dividas')"><span class="bi2">💸</span>Dívidas</button>
+    <button class="bni" onclick="toggleSidebar()"><span class="bi2">☰</span>Mais</button>
   </div>
 </nav>
 
@@ -632,6 +696,47 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
 </div>
 
+<!-- MODAL: Dívida -->
+<div class="mo" id="mo-div">
+  <div class="md">
+    <div class="md-handle"></div>
+    <h2 id="div-mo-title">Nova Dívida</h2>
+    <input type="hidden" id="dv-id">
+    <div class="fr">
+      <div class="fg"><label>Credor *</label><input type="text" id="dv-cred" placeholder="Ex: Banco Itaú, NET, Serasa..."></div>
+      <div class="fg"><label>Tipo</label>
+        <select id="dv-type">
+          <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+          <option value="Empréstimo">💰 Empréstimo</option>
+          <option value="Financiamento">🏠 Financiamento</option>
+          <option value="Conta em Atraso">📄 Conta em Atraso</option>
+          <option value="Cheque Especial">🏦 Cheque Especial</option>
+          <option value="Outro">💼 Outro</option>
+        </select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Valor Original (R$) *</label><input type="number" id="dv-orig" step="0.01" placeholder="0,00" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Atual para Quitar (R$) *</label><input type="number" id="dv-curr" step="0.01" placeholder="0,00" inputmode="decimal"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Valor Negociado (R$)</label><input type="number" id="dv-nego" step="0.01" placeholder="Se já negociou..." inputmode="decimal"></div>
+      <div class="fg"><label>Status</label>
+        <select id="dv-status">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="em_negociacao">🤝 Em Negociação</option>
+          <option value="quitada">✅ Quitada</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Observações</label><textarea id="dv-notes" rows="2" placeholder="Ex: entrando em contato pelo app do banco..."></textarea></div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-div')">Cancelar</button>
+      <button class="btn btn-p" style="width:auto;flex:1" onclick="saveDiv()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: PDF Import -->
 <div class="mo" id="mo-pdf">
   <div class="md" style="max-width:700px;width:100%">
@@ -707,7 +812,7 @@ const INV_TYPES={poupanca:{label:'Poupança',icon:'🏦',color:'#2ecc71'},rendaf
 const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── STATE ──────────────────────────────────────────────────
-let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
+let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],debts:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
 let cPie=null,cBar=null,cInvPie=null;
 
 // ── PERSISTENCE ────────────────────────────────────────────
@@ -719,71 +824,44 @@ function persist(){
   localStorage.setItem('fp_bud',JSON.stringify(S.budgets));
   localStorage.setItem('fp_inv',JSON.stringify(S.investments));
   localStorage.setItem('fp_goals',JSON.stringify(S.goals));
+  localStorage.setItem('fp_debts',JSON.stringify(S.debts));
 }
 function hydrate(){
   const get=k=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}};
   S.txns=get('fp_t')||[];S.cards=get('fp_c')||[];S.bills=get('fp_b')||[];
   S.cats=get('fp_cat')||[...DEF_CATS];S.budgets=get('fp_bud')||{};
   S.investments=get('fp_inv')||[];S.goals=get('fp_goals')||[];
+  S.debts=get('fp_debts')||[];
 }
 
-// ── DEMO DATA ──────────────────────────────────────────────
+// ── DEMO DATA (exemplos mínimos) ───────────────────────────
 function seedDemo(){
   const now=new Date(),m=now.getMonth(),y=now.getFullYear();
-  const pm=m===0?11:m-1,py=m===0?y-1:y;
   const dt=(mo,d,yr=y)=>`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
-  S.cards=[{id:'card1',name:'Nubank',limit:5000,closeDay:15,dueDay:22,color:'purple'},{id:'card2',name:'Itaú Visa',limit:8000,closeDay:8,dueDay:15,color:'orange'}];
+  // 2 cartões de exemplo
+  S.cards=[
+    {id:'card1',name:'Nubank',limit:5000,closeDay:15,dueDay:22,color:'purple'},
+    {id:'card2',name:'Itaú Visa',limit:8000,closeDay:8,dueDay:15,color:'orange'}
+  ];
+  // 2 contas fixas de exemplo
   S.bills=[
     {id:'b1',name:'Aluguel',value:1500,dueDay:5,category:'Contas Fixas',paid:[]},
     {id:'b2',name:'Internet',value:99.90,dueDay:10,category:'Assinaturas',paid:[]},
-    {id:'b3',name:'Academia',value:89.90,dueDay:1,category:'Saúde',paid:[]},
-    {id:'b4',name:'Spotify',value:21.90,dueDay:15,category:'Assinaturas',paid:[]},
-    {id:'b5',name:'Seguro do Carro',value:250,dueDay:20,category:'Transporte',paid:[]}
   ];
-  S.budgets={Alimentação:800,Transporte:400,Lazer:300,Saúde:200,Assinaturas:150,Educação:200,Outros:300};
-  S.investments=[
-    {id:'i1',name:'Poupança Nubank',institution:'Nubank',type:'poupanca',invested:5000,currentValue:5120,date:dt(pm,1,py),notes:'Reserva de emergência'},
-    {id:'i2',name:'CDB 110% CDI',institution:'XP Investimentos',type:'rendafixa',invested:10000,currentValue:10680,date:dt(pm,3,py),notes:'Vence em 2 anos'},
-    {id:'i3',name:'Tesouro Selic 2029',institution:'Tesouro Direto',type:'tesouro',invested:3000,currentValue:3210,date:dt(pm,5,py),notes:''},
-    {id:'i4',name:'PETR4 / VALE3',institution:'Clear Corretora',type:'acoes',invested:4500,currentValue:5200,date:dt(pm,8,py),notes:'Carteira de ações'},
-    {id:'i5',name:'HGLG11',institution:'Rico',type:'fii',invested:2000,currentValue:2150,date:dt(pm,10,py),notes:'FII logística'},
-    {id:'i6',name:'Bitcoin',institution:'Binance',type:'crypto',invested:1500,currentValue:1320,date:dt(pm,12,py),notes:''},
-  ];
-  S.goals=[
-    {id:'g1',name:'Fundo de Emergência',icon:'🛡️',color:'#00c896',category:'Emergência',targetAmount:30000,currentAmount:15120,deadline:dt(m+6>11?m+6-12:m+6,1,m+6>11?y+1:y)},
-    {id:'g2',name:'Viagem para Europa',icon:'✈️',color:'#3b82f6',category:'Viagem',targetAmount:15000,currentAmount:4200,deadline:dt(m+18>11?(m+18)%12:m+18,1,y+Math.floor((m+18)/12))},
-    {id:'g3',name:'Entrada do Apartamento',icon:'🏠',color:'#7c6af7',category:'Casa',targetAmount:80000,currentAmount:22000,deadline:dt(0,1,y+3)},
-    {id:'g4',name:'Novo MacBook',icon:'💻',color:'#ff9f43',category:'Eletrônicos',targetAmount:12000,currentAmount:7500,deadline:dt(m+4>11?m+4-12:m+4,1,m+4>11?y+1:y)},
-  ];
+  // orçamentos padrão
+  S.budgets={Alimentação:800,Transporte:400,Lazer:300,Saúde:200,Assinaturas:150};
+  // sem investimentos — usuário cadastra os próprios
+  S.investments=[];
+  // sem metas — usuário cria as próprias
+  S.goals=[];
+  // sem dívidas — usuário cadastra as próprias
+  S.debts=[];
+  // apenas 3 lançamentos para mostrar como funciona
   S.txns=[
-    {id:uid(),type:'income',desc:'Salário',value:6500,category:'Salário',date:dt(m,5),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Supermercado Extra',value:287.50,category:'Alimentação',date:dt(m,3),obs:'',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Uber para o trabalho',value:24.90,category:'Transporte',date:dt(m,4),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Netflix',value:39.90,category:'Assinaturas',date:dt(m,5),obs:'',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'expense',desc:'Farmácia Ultrafarma',value:78.60,category:'Saúde',date:dt(m,6),obs:'Remédios',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Restaurante Madero',value:95.00,category:'Alimentação',date:dt(m,7),obs:'Jantar',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'expense',desc:'Gasolina Shell',value:200.00,category:'Transporte',date:dt(m,8),obs:'',payment:'credit',cardId:'card2'},
-    {id:uid(),type:'expense',desc:'Curso Udemy',value:49.90,category:'Educação',date:dt(m,9),obs:'',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'expense',desc:'iFood — Pizza',value:67.90,category:'Alimentação',date:dt(m,12),obs:'',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'expense',desc:'Cinema',value:84.00,category:'Lazer',date:dt(m,14),obs:'',payment:'credit',cardId:'card2'},
-    {id:uid(),type:'expense',desc:'Conta de luz',value:145.30,category:'Contas Fixas',date:dt(m,10),obs:'',payment:'pix'},
-    {id:uid(),type:'income',desc:'Freela — site',value:1200,category:'Freelance',date:dt(m,15),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Hortifruti',value:98.40,category:'Alimentação',date:dt(m,16),obs:'',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Manutenção do carro',value:380.00,category:'Transporte',date:dt(m,17),obs:'',payment:'credit-installment',cardId:'card2',ic:1,it:3},
-    {id:uid(),type:'expense',desc:'Bar com amigos',value:110.00,category:'Lazer',date:dt(m,18),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Amazon Prime',value:14.90,category:'Assinaturas',date:dt(m,1),obs:'',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'income',desc:'Salário',value:6500,category:'Salário',date:dt(pm,5,py),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Supermercado',value:320.00,category:'Alimentação',date:dt(pm,4,py),obs:'',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Passagem aérea RJ',value:850.00,category:'Viagens',date:dt(pm,8,py),obs:'',payment:'credit-installment',cardId:'card1',ic:1,it:6},
-    {id:uid(),type:'expense',desc:'Hotel RJ',value:680.00,category:'Viagens',date:dt(pm,9,py),obs:'',payment:'credit',cardId:'card1'},
-    {id:uid(),type:'expense',desc:'Restaurante Sushi',value:145.00,category:'Alimentação',date:dt(pm,12,py),obs:'',payment:'credit',cardId:'card2'},
-    {id:uid(),type:'expense',desc:'Uber',value:45.80,category:'Transporte',date:dt(pm,15,py),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Farmácia',value:62.00,category:'Saúde',date:dt(pm,18,py),obs:'',payment:'debit'},
-    {id:uid(),type:'expense',desc:'Conta de água',value:55.40,category:'Contas Fixas',date:dt(pm,20,py),obs:'',payment:'pix'},
-    {id:uid(),type:'expense',desc:'Show Maroon 5',value:200.00,category:'Lazer',date:dt(pm,22,py),obs:'',payment:'credit',cardId:'card2'},
-    {id:uid(),type:'expense',desc:'Gasolina',value:180.00,category:'Transporte',date:dt(pm,25,py),obs:'',payment:'credit',cardId:'card2'},
-    {id:uid(),type:'income',desc:'Rendimento CDB',value:68,category:'Investimentos',date:dt(pm,28,py),obs:'',payment:'pix'},
+    {id:uid(),type:'income',desc:'Salário',value:0,category:'Salário',date:dt(m,5),obs:'Edite com seu valor real',payment:'pix'},
+    {id:uid(),type:'expense',desc:'Supermercado',value:0,category:'Alimentação',date:dt(m,8),obs:'Exemplo — edite ou apague',payment:'debit'},
+    {id:uid(),type:'expense',desc:'Exemplo de gasto',value:0,category:'Outros',date:dt(m,10),obs:'Clique em ✏️ para editar',payment:'pix'},
   ];
   persist();
 }
@@ -820,7 +898,7 @@ function closeSidebar(){
 }
 
 // ── NAVIGATION ─────────────────────────────────────────────
-const SEC_TITLES={dashboard:'Dashboard',novo:'Novo Lançamento',extrato:'Extrato',cartoes:'Cartões',contas:'Contas Fixas',investimentos:'Investimentos',metas:'Metas',orcamento:'Orçamento',categorias:'Categorias'};
+const SEC_TITLES={dashboard:'Dashboard',novo:'Novo Lançamento',extrato:'Extrato',cartoes:'Cartões',contas:'Contas Fixas',dividas:'Dívidas',investimentos:'Investimentos',metas:'Metas',orcamento:'Orçamento',categorias:'Categorias'};
 function nav(sec){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.ni,.bni').forEach(n=>n.classList.remove('active'));
@@ -832,6 +910,7 @@ function nav(sec){
   else if(sec==='extrato') rendExt();
   else if(sec==='cartoes') rendCards();
   else if(sec==='contas') rendBills();
+  else if(sec==='dividas') rendDividas();
   else if(sec==='investimentos') rendInv();
   else if(sec==='metas') rendGoals();
   else if(sec==='orcamento') rendBud();
@@ -1004,7 +1083,7 @@ function txnHTML(t){
     <div class="tic" style="background:${cat.color}22">${cat.icon}</div>
     <div class="tif">
       <div class="td">${t.desc}${inst}</div>
-      <div class="tc2">${cat.icon} ${t.category} · ${PAY_LBL[t.payment]||t.payment}${card?' · '+card.name:''}</div>
+      <div class="tc2">${fd(t.date)} · ${cat.icon} ${t.category} · ${PAY_LBL[t.payment]||t.payment}${card?' · '+card.name:''}</div>
     </div>
     <div class="tdate">${fd(t.date)}</div>
     <div class="tam ${t.type}">${t.type==='income'?'+':'-'} ${fm(t.value)}</div>
@@ -1362,6 +1441,109 @@ function saveCat(){
   persist();closeMo('mo-cat');rendCats();toast('Categoria salva!');
 }
 function delCat(id){const cat=S.cats.find(c=>c.id===id);if(!cat||cat.def)return;if(!confirm(`Excluir "${cat.name}"?`))return;S.cats=S.cats.filter(c=>c.id!==id);persist();rendCats();toast('Excluída')}
+
+// ── DÍVIDAS ────────────────────────────────────────────────
+const DIV_STATUS={
+  pendente:{label:'Pendente',color:'var(--red)',bg:'rgba(255,77,109,.12)'},
+  em_negociacao:{label:'Em Negociação',color:'var(--orange)',bg:'rgba(255,159,67,.12)'},
+  quitada:{label:'Quitada',color:'var(--green)',bg:'rgba(0,200,150,.12)'}
+};
+
+function rendDividas(){
+  const ativas=S.debts.filter(d=>d.status!=='quitada');
+  const quitadas=S.debts.filter(d=>d.status==='quitada');
+  const totOrig=ativas.reduce((s,d)=>s+Number(d.originalAmount||0),0);
+  const totCurr=ativas.reduce((s,d)=>s+Number(d.currentAmount||0),0);
+  const totNego=ativas.filter(d=>d.negotiatedAmount>0).reduce((s,d)=>s+Number(d.negotiatedAmount),0);
+  const economia=totNego>0?totCurr-totNego:0;
+
+  document.getElementById('div-sum-cards').innerHTML=`
+    <div class="sc rd"><div class="lbl">Total Devendo</div><div class="val rd">${fm(totCurr)}</div><div class="sub">${ativas.length} dívida(s) ativa(s)</div></div>
+    <div class="sc or"><div class="lbl">Valor Original</div><div class="val or">${fm(totOrig)}</div><div class="sub">antes dos encargos</div></div>
+    <div class="sc ${economia>0?'gr':'pu'}"><div class="lbl">${economia>0?'Desconto Negociado':'Já Quitadas'}</div><div class="val ${economia>0?'gr':'pu'}">${economia>0?fm(economia):quitadas.length}</div><div class="sub">${economia>0?'de economia potencial':'dívida(s) quitada(s)'}</div></div>
+    <div class="sc bl"><div class="lbl">Em Negociação</div><div class="val bl">${S.debts.filter(d=>d.status==='em_negociacao').length}</div><div class="sub">aguardando acordo</div></div>`;
+
+  if(!S.debts.length){
+    document.getElementById('div-list').innerHTML=`<div class="es"><div class="ei">🎉</div><p>Nenhuma dívida registrada.<br>Boa notícia!</p></div>`;
+    return;
+  }
+
+  document.getElementById('div-list').innerHTML=S.debts.map(d=>{
+    const st=DIV_STATUS[d.status]||DIV_STATUS.pendente;
+    const eco=d.negotiatedAmount>0?Number(d.currentAmount)-Number(d.negotiatedAmount):0;
+    const isDone=d.status==='quitada';
+    return`<div class="card" style="margin-bottom:10px;opacity:${isDone?.55:1};border-left:3px solid ${st.color}">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+            <span style="font-weight:700;font-size:.95rem">${d.creditor}</span>
+            <span style="padding:2px 9px;border-radius:20px;font-size:.7rem;font-weight:600;background:${st.bg};color:${st.color}">${st.label}</span>
+          </div>
+          <div style="font-size:.78rem;color:var(--text2)">${d.type}${d.notes?' · '+d.notes:''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:.72rem;color:var(--text2)">Para quitar</div>
+          <div style="font-size:1.2rem;font-weight:700;color:${isDone?'var(--text2)':'var(--red)'}">${fm(d.currentAmount)}</div>
+          ${d.negotiatedAmount>0?`<div style="font-size:.8rem;color:var(--green);font-weight:600">Negociado: ${fm(d.negotiatedAmount)}</div><div style="font-size:.72rem;color:var(--green)">Desconto de ${fm(eco)}</div>`:''}
+          ${Number(d.originalAmount)!==Number(d.currentAmount)?`<div style="font-size:.72rem;color:var(--text2)">Original: ${fm(d.originalAmount)}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+        ${!isDone?`<button class="btn btn-sm" style="background:rgba(0,200,150,.15);color:var(--green);border:1px solid rgba(0,200,150,.3)" onclick="quitarDiv('${d.id}')">✅ Quitar</button>`:''}
+        <button class="btn btn-s btn-sm" onclick="openDivMo('${d.id}')">✏️ Editar</button>
+        <button class="btn btn-d btn-sm" onclick="delDiv('${d.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDivMo(id){
+  if(id){
+    const d=S.debts.find(d=>d.id===id);if(!d)return;
+    document.getElementById('div-mo-title').textContent='Editar Dívida';
+    document.getElementById('dv-id').value=id;
+    document.getElementById('dv-cred').value=d.creditor;
+    document.getElementById('dv-type').value=d.type;
+    document.getElementById('dv-orig').value=d.originalAmount;
+    document.getElementById('dv-curr').value=d.currentAmount;
+    document.getElementById('dv-nego').value=d.negotiatedAmount||'';
+    document.getElementById('dv-status').value=d.status;
+    document.getElementById('dv-notes').value=d.notes||'';
+  }else{
+    document.getElementById('div-mo-title').textContent='Nova Dívida';
+    ['dv-id','dv-cred','dv-orig','dv-curr','dv-nego','dv-notes'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('dv-status').value='pendente';
+  }
+  openMo('mo-div');
+}
+
+function saveDiv(){
+  const id=document.getElementById('dv-id').value;
+  const creditor=document.getElementById('dv-cred').value.trim();
+  const type=document.getElementById('dv-type').value;
+  const originalAmount=parseFloat(document.getElementById('dv-orig').value)||0;
+  const currentAmount=parseFloat(document.getElementById('dv-curr').value)||0;
+  const negotiatedAmount=parseFloat(document.getElementById('dv-nego').value)||0;
+  const status=document.getElementById('dv-status').value;
+  const notes=document.getElementById('dv-notes').value.trim();
+  if(!creditor||!currentAmount){toast('Preencha credor e valor atual','error');return}
+  const obj={creditor,type,originalAmount:originalAmount||currentAmount,currentAmount,negotiatedAmount,status,notes,date:new Date().toISOString().split('T')[0]};
+  if(id) Object.assign(S.debts.find(d=>d.id===id),obj);
+  else S.debts.push({id:uid(),...obj});
+  persist();closeMo('mo-div');rendDividas();toast('Dívida salva!');
+}
+
+function quitarDiv(id){
+  const d=S.debts.find(d=>d.id===id);if(!d)return;
+  if(!confirm(`Marcar "${d.creditor}" como quitada?`))return;
+  d.status='quitada';
+  persist();rendDividas();toast('Dívida marcada como quitada! 🎉');
+}
+
+function delDiv(id){
+  if(!confirm('Excluir esta dívida?'))return;
+  S.debts=S.debts.filter(d=>d.id!==id);persist();rendDividas();toast('Dívida excluída');
+}
 
 // ── PDF IMPORT ─────────────────────────────────────────────
 let pdfTxns = [];
