@@ -144,6 +144,15 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 @keyframes sin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes sout{from{opacity:1}to{opacity:0;transform:translateY(8px)}}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+/* ── CARD BRAND PICKER ── */
+.brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:7px;max-height:240px;overflow-y:auto;padding:2px}
+.brand-chip{border-radius:10px;padding:8px 6px;cursor:pointer;text-align:center;border:2px solid transparent;transition:all .2s;background:var(--card2)}
+.brand-chip:hover{border-color:rgba(255,255,255,.2);transform:translateY(-1px)}
+.brand-chip.sel{border-color:var(--green);box-shadow:0 0 0 2px rgba(0,200,150,.25)}
+.bc-swatch{height:28px;border-radius:6px;margin-bottom:6px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.bc-logo{height:18px;max-width:52px;object-fit:contain;filter:brightness(0) invert(1);opacity:.9}
+.bc-name{font-size:.64rem;font-weight:600;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.section-divider{grid-column:1/-1;padding:6px 0 2px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text2);border-bottom:1px solid var(--border)}
 /* ── PDF IMPORT ── */
 .pdf-drop{border:2px dashed var(--border);border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-top:4px}
 .pdf-drop:hover,.pdf-drop.drag{border-color:var(--green);background:rgba(0,200,150,.06)}
@@ -537,27 +546,65 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
 <!-- MODAL: Card -->
 <div class="mo" id="mo-card">
-  <div class="md">
+  <div class="md" style="max-width:600px">
     <div class="md-handle"></div>
     <h2 id="card-mo-title">Novo Cartão</h2>
     <input type="hidden" id="cd-id">
-    <div class="fg"><label>Nome do Cartão</label><input type="text" id="cd-name" placeholder="Ex: Nubank, Itaú..."></div>
-    <div class="fr">
-      <div class="fg"><label>Limite Total (R$)</label><input type="number" id="cd-limit" placeholder="5000" step="0.01" inputmode="decimal"></div>
-      <div class="fg"><label>Cor</label>
-        <select id="cd-color">
-          <option value="purple">🟣 Roxo</option><option value="blue">🔵 Azul</option>
-          <option value="green">🟢 Verde</option><option value="red">🔴 Vermelho</option><option value="orange">🟠 Laranja</option>
-        </select>
+    <input type="hidden" id="cd-gradient">
+    <input type="hidden" id="cd-brand-id">
+
+    <!-- Preview ao vivo -->
+    <div id="cd-preview" class="cv" style="margin-bottom:16px;min-height:110px;cursor:default">
+      <div style="font-size:.65rem;opacity:.7;margin-bottom:4px">CARTÃO DE CRÉDITO</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div id="cdp-logo" style="height:28px;display:flex;align-items:center"></div>
+      </div>
+      <div id="cdp-name" style="font-size:1.1rem;font-weight:700;margin-bottom:10px">Meu Cartão</div>
+      <div style="display:flex;justify-content:space-between;font-size:.75rem;opacity:.85">
+        <div><div style="opacity:.7;font-size:.6rem">LIMITE</div><div id="cdp-limit" style="font-weight:600">—</div></div>
+        <div><div style="opacity:.7;font-size:.6rem">FECHAMENTO</div><div id="cdp-close" style="font-weight:600">Dia —</div></div>
+        <div><div style="opacity:.7;font-size:.6rem">VENCIMENTO</div><div id="cdp-due" style="font-weight:600">Dia —</div></div>
       </div>
     </div>
+
+    <!-- Picker de banco / cor -->
+    <div class="fg">
+      <label>Banco ou Cor</label>
+      <div class="brand-grid" id="cd-brand-grid"></div>
+    </div>
+
+    <!-- Cor personalizada (aparece quando selecionado) -->
+    <div class="fg" id="cd-custom-row" style="display:none">
+      <label>Cor personalizada</label>
+      <input type="color" id="cd-custom-color" value="#7c6af7"
+        oninput="applyCustomColor(this.value)"
+        style="width:100%;height:44px;cursor:pointer;border-radius:8px;border:1px solid var(--border);background:var(--bg)">
+    </div>
+
+    <div class="fg"><label>Nome no Cartão *</label>
+      <input type="text" id="cd-name" placeholder="Ex: Nubank Gold, Itaú Visa..." oninput="document.getElementById('cdp-name').textContent=this.value||'Meu Cartão'">
+    </div>
     <div class="fr">
-      <div class="fg"><label>Dia Fechamento</label><input type="number" id="cd-close" placeholder="15" min="1" max="31" inputmode="numeric"></div>
-      <div class="fg"><label>Dia Vencimento</label><input type="number" id="cd-due" placeholder="22" min="1" max="31" inputmode="numeric"></div>
+      <div class="fg"><label>Limite Total (R$) *</label>
+        <input type="number" id="cd-limit" step="0.01" inputmode="decimal" placeholder="5000"
+          oninput="document.getElementById('cdp-limit').textContent=this.value?'R$ '+parseFloat(this.value).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'">
+      </div>
+      <div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <label>Dia Fechamento *</label>
+          <input type="number" id="cd-close" min="1" max="31" inputmode="numeric" placeholder="15"
+            oninput="document.getElementById('cdp-close').textContent='Dia '+(this.value||'—')">
+        </div>
+        <div>
+          <label>Dia Vencimento *</label>
+          <input type="number" id="cd-due" min="1" max="31" inputmode="numeric" placeholder="22"
+            oninput="document.getElementById('cdp-due').textContent='Dia '+(this.value||'—')">
+        </div>
+      </div>
     </div>
     <div class="mdf">
       <button class="btn btn-s" onclick="closeMo('mo-card')">Cancelar</button>
-      <button class="btn btn-p" style="width:auto;flex:1" onclick="saveCard()">Salvar</button>
+      <button class="btn btn-p" style="width:auto;flex:1" onclick="saveCard()">Salvar Cartão</button>
     </div>
   </div>
 </div>
@@ -808,6 +855,70 @@ const DEF_CATS=[
 ];
 const PAY_LBL={debit:'Débito',credit:'Crédito à Vista','credit-installment':'Parcelado',pix:'PIX',cash:'Dinheiro'};
 const CARD_GRAD={purple:'linear-gradient(135deg,#7c6af7,#4a3fc7)',blue:'linear-gradient(135deg,#3b82f6,#1d4ed8)',green:'linear-gradient(135deg,#00c896,#007a5e)',red:'linear-gradient(135deg,#ff4d6d,#c0392b)',orange:'linear-gradient(135deg,#ff9f43,#e67e22)'};
+
+// Bancos + marcas brasileiras com logo e gradiente oficial
+const CARD_BRANDS=[
+  {id:'nubank',    name:'Nubank',         grad:'linear-gradient(135deg,#8A05BE,#5c0480)', domain:'nubank.com.br'},
+  {id:'itau',      name:'Itaú',           grad:'linear-gradient(135deg,#EC7000,#b85200)', domain:'itau.com.br'},
+  {id:'bradesco',  name:'Bradesco',       grad:'linear-gradient(135deg,#CC092F,#8B0B22)', domain:'bradesco.com.br'},
+  {id:'santander', name:'Santander',      grad:'linear-gradient(135deg,#EC0000,#990000)', domain:'santander.com.br'},
+  {id:'bb',        name:'Banco do Brasil',grad:'linear-gradient(135deg,#FBBA00,#1a1a3e)', domain:'bb.com.br'},
+  {id:'caixa',     name:'Caixa',          grad:'linear-gradient(135deg,#005CA9,#003570)', domain:'caixa.gov.br'},
+  {id:'inter',     name:'Inter',          grad:'linear-gradient(135deg,#FF7A00,#c05500)', domain:'bancointer.com.br'},
+  {id:'c6',        name:'C6 Bank',        grad:'linear-gradient(135deg,#424242,#1a1a1a)', domain:'c6bank.com.br'},
+  {id:'xp',        name:'XP',             grad:'linear-gradient(135deg,#2a2a2a,#101010)', domain:'xpi.com.br'},
+  {id:'btg',       name:'BTG Pactual',    grad:'linear-gradient(135deg,#002B5C,#001836)', domain:'btgpactual.com'},
+  {id:'picpay',    name:'PicPay',         grad:'linear-gradient(135deg,#21C25E,#158a42)', domain:'picpay.com'},
+  {id:'neon',      name:'Neon',           grad:'linear-gradient(135deg,#00D4FF,#0099cc)', domain:'neon.com.br'},
+  {id:'next',      name:'Next',           grad:'linear-gradient(135deg,#00C08B,#007a59)', domain:'next.me'},
+  {id:'pan',       name:'Banco PAN',      grad:'linear-gradient(135deg,#F7C300,#b88e00)', domain:'bancopan.com.br'},
+  {id:'original',  name:'Original',       grad:'linear-gradient(135deg,#00B957,#006b31)', domain:'original.com.br'},
+  {id:'sicoob',    name:'Sicoob',         grad:'linear-gradient(135deg,#00995D,#005e38)', domain:'sicoob.com.br'},
+  {id:'sicredi',   name:'Sicredi',        grad:'linear-gradient(135deg,#01824B,#004d2c)', domain:'sicredi.com.br'},
+  {id:'pagbank',   name:'PagBank',        grad:'linear-gradient(135deg,#F4A900,#bf7f00)', domain:'pagbank.com.br'},
+  {id:'stone',     name:'Stone',          grad:'linear-gradient(135deg,#00A868,#006b43)', domain:'stone.com.br'},
+  {id:'will',      name:'Will Bank',      grad:'linear-gradient(135deg,#FFDD00,#c9ab00)', domain:'willbank.com.br'},
+  {id:'digio',     name:'Digio',          grad:'linear-gradient(135deg,#2D4796,#1a2d6b)', domain:'digio.com.br'},
+  {id:'ame',       name:'Ame Digital',    grad:'linear-gradient(135deg,#FF4B55,#cc0010)', domain:'amedigital.com'},
+  {id:'avenue',    name:'Avenue',         grad:'linear-gradient(135deg,#00457C,#002d54)', domain:'avenue.us'},
+  {id:'mercado',   name:'Mercado Pago',   grad:'linear-gradient(135deg,#00B1EA,#0080b0)', domain:'mercadopago.com.br'},
+  {id:'modal',     name:'Modal',          grad:'linear-gradient(135deg,#FF5C35,#cc3a1a)', domain:'modal.com.br'},
+  {id:'bs2',       name:'BS2',            grad:'linear-gradient(135deg,#0071CE,#004d8c)', domain:'bs2.com'},
+  // Bandeiras internacionais
+  {id:'visa',      name:'Visa',           grad:'linear-gradient(135deg,#1A1F71,#0e134d)', domain:'visa.com.br'},
+  {id:'master',    name:'Mastercard',     grad:'linear-gradient(135deg,#EB001B,#F79E1B)', domain:'mastercard.com.br'},
+  {id:'amex',      name:'Amex',           grad:'linear-gradient(135deg,#007BC1,#004d80)', domain:'americanexpress.com'},
+  {id:'elo',       name:'Elo',            grad:'linear-gradient(135deg,#2B2B2B,#F7B000)', domain:'elo.com.br'},
+  {id:'hipercard', name:'Hipercard',      grad:'linear-gradient(135deg,#B11116,#6b0009)', domain:'hipercard.com.br'},
+];
+
+// Paleta de cores extras (sem banco específico)
+const EXTRA_GRADS=[
+  'linear-gradient(135deg,#7c6af7,#4a3fc7)',
+  'linear-gradient(135deg,#3b82f6,#1d4ed8)',
+  'linear-gradient(135deg,#00c896,#007a5e)',
+  'linear-gradient(135deg,#ff4d6d,#c0392b)',
+  'linear-gradient(135deg,#ff9f43,#e67e22)',
+  'linear-gradient(135deg,#9b59b6,#6c3483)',
+  'linear-gradient(135deg,#1abc9c,#0e8c74)',
+  'linear-gradient(135deg,#34495e,#1c2833)',
+  'linear-gradient(135deg,#e74c3c,#922b21)',
+  'linear-gradient(135deg,#2ecc71,#1a8a4a)',
+  'linear-gradient(135deg,#f39c12,#d68910)',
+  'linear-gradient(135deg,#16213e,#0f3460)',
+  'linear-gradient(135deg,#533483,#3a1f6b)',
+  'linear-gradient(135deg,#2d6a4f,#1b4332)',
+  'linear-gradient(135deg,#c77dff,#7b2d8b)',
+  'linear-gradient(135deg,#ee9b00,#ca6702)',
+];
+
+function getCardGrad(card){
+  if(card.gradient) return card.gradient;
+  return CARD_GRAD[card.color]||CARD_GRAD.purple;
+}
+function getCardBrand(card){
+  return CARD_BRANDS.find(b=>b.id===card.brandId)||null;
+}
 const INV_TYPES={poupanca:{label:'Poupança',icon:'🏦',color:'#2ecc71'},rendafixa:{label:'Renda Fixa',icon:'📄',color:'#3b82f6'},tesouro:{label:'Tesouro Direto',icon:'🇧🇷',color:'#1abc9c'},fundos:{label:'Fundos',icon:'📦',color:'#9b59b6'},acoes:{label:'Ações',icon:'📈',color:'#00c896'},fii:{label:'FIIs',icon:'🏢',color:'#f39c12'},crypto:{label:'Cripto',icon:'₿',color:'#ff9f43'},outro:{label:'Outro',icon:'💼',color:'#95a7b7'}};
 const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
@@ -1137,15 +1248,22 @@ function rendCards(){
     const fatura=cardTxns.filter(t=>{const d=new Date(t.date);return d>=pS&&d<=pE}).reduce((s,t)=>s+Number(t.value),0);
     const pct=Math.min(card.limit>0?fatura/card.limit*100:0,100);
     const barCol=pct>=80?'#ff4d6d':pct>=60?'#ff9f43':'#00c896';
-    const grad=CARD_GRAD[card.color]||CARD_GRAD.purple;
+    const grad=getCardGrad(card);
+    const brand=getCardBrand(card);
+    const logoHTML=brand?`<img src="https://logo.clearbit.com/${brand.domain}"
+      style="height:22px;max-width:70px;object-fit:contain;filter:brightness(0) invert(1);opacity:.9"
+      onerror="this.outerHTML='<span style=\\'font-weight:900;font-size:.85rem;opacity:.85\\'>${brand.name.slice(0,4).toUpperCase()}</span>'">`:'';
     return`<div>
       <div class="cv" style="background:${grad};margin-bottom:12px">
-        <div style="font-size:.7rem;opacity:.75;margin-bottom:5px">CARTÃO DE CRÉDITO</div>
-        <div style="font-size:1.15rem;font-weight:700;margin-bottom:12px">${card.name}</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-size:.65rem;opacity:.7;letter-spacing:.5px">CARTÃO DE CRÉDITO</div>
+          ${logoHTML}
+        </div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:12px">${card.name}</div>
         <div style="display:flex;justify-content:space-between">
-          <div><div style="font-size:.65rem;opacity:.7">FECHAMENTO</div><div style="font-weight:600;font-size:.9rem">Dia ${card.closeDay}</div></div>
-          <div><div style="font-size:.65rem;opacity:.7">VENCIMENTO</div><div style="font-weight:600;font-size:.9rem">Dia ${card.dueDay}</div></div>
-          <div style="text-align:right"><div style="font-size:.65rem;opacity:.7">LIMITE</div><div style="font-weight:600;font-size:.9rem">${fm(card.limit)}</div></div>
+          <div><div style="font-size:.6rem;opacity:.7">FECHAMENTO</div><div style="font-weight:600;font-size:.88rem">Dia ${card.closeDay}</div></div>
+          <div><div style="font-size:.6rem;opacity:.7">VENCIMENTO</div><div style="font-weight:600;font-size:.88rem">Dia ${card.dueDay}</div></div>
+          <div style="text-align:right"><div style="font-size:.6rem;opacity:.7">LIMITE</div><div style="font-weight:600;font-size:.88rem">${fm(card.limit)}</div></div>
         </div>
       </div>
       <div class="card">
@@ -1163,16 +1281,128 @@ function rendCards(){
     </div>`;
   }).join('');
 }
+
+function buildBrandGrid(selectedGrad){
+  const brandChips=CARD_BRANDS.map(b=>{
+    const sel=selectedGrad===b.grad?'sel':'';
+    return`<div class="brand-chip ${sel}" onclick="selectBrand('${b.id}')" title="${b.name}">
+      <div class="bc-swatch" style="background:${b.grad}">
+        <img src="https://logo.clearbit.com/${b.domain}" class="bc-logo"
+          onerror="this.outerHTML='<span style=\\'font-size:.55rem;font-weight:900;color:white;opacity:.9\\'>${b.name.split(' ')[0].slice(0,4).toUpperCase()}</span>'">
+      </div>
+      <div class="bc-name">${b.name.split(' ')[0]}</div>
+    </div>`;
+  }).join('');
+
+  const extraChips=EXTRA_GRADS.map((g,i)=>{
+    const sel=selectedGrad===g?'sel':'';
+    return`<div class="brand-chip ${sel}" onclick="selectGrad('${g}')" title="Cor ${i+1}">
+      <div class="bc-swatch" style="background:${g}"></div>
+      <div class="bc-name" style="opacity:0">—</div>
+    </div>`;
+  }).join('');
+
+  const customChip=`<div class="brand-chip" onclick="document.getElementById('cd-custom-color').click()" title="Personalizado">
+    <div class="bc-swatch" style="background:conic-gradient(red,#ff0 60deg,lime 120deg,aqua 180deg,blue 240deg,magenta 300deg,red)"></div>
+    <div class="bc-name">Custom</div>
+  </div>`;
+
+  return`<div class="section-divider">🇧🇷 Bancos</div>${brandChips}
+    <div class="section-divider">🎨 Cores</div>${extraChips}${customChip}`;
+}
+
+function selectBrand(brandId){
+  const brand=CARD_BRANDS.find(b=>b.id===brandId);if(!brand)return;
+  document.getElementById('cd-gradient').value=brand.grad;
+  document.getElementById('cd-brand-id').value=brandId;
+  document.getElementById('cd-custom-row').style.display='none';
+  // auto-fill name se estiver vazio
+  if(!document.getElementById('cd-name').value){
+    document.getElementById('cd-name').value=brand.name;
+    document.getElementById('cdp-name').textContent=brand.name;
+  }
+  applyPreviewGrad(brand.grad, brand);
+  document.getElementById('cd-brand-grid').innerHTML=buildBrandGrid(brand.grad);
+}
+
+function selectGrad(grad){
+  document.getElementById('cd-gradient').value=grad;
+  document.getElementById('cd-brand-id').value='';
+  document.getElementById('cd-custom-row').style.display='none';
+  applyPreviewGrad(grad, null);
+  document.getElementById('cd-brand-grid').innerHTML=buildBrandGrid(grad);
+}
+
+function applyCustomColor(hex){
+  const grad=`linear-gradient(135deg,${hex},${hex}cc)`;
+  document.getElementById('cd-gradient').value=grad;
+  document.getElementById('cd-brand-id').value='';
+  applyPreviewGrad(grad, null);
+  document.getElementById('cd-brand-grid').innerHTML=buildBrandGrid(grad);
+}
+
+function applyPreviewGrad(grad, brand){
+  const preview=document.getElementById('cd-preview');
+  preview.style.background=grad;
+  const logoEl=document.getElementById('cdp-logo');
+  if(brand){
+    logoEl.innerHTML=`<img src="https://logo.clearbit.com/${brand.domain}"
+      style="height:22px;max-width:70px;object-fit:contain;filter:brightness(0) invert(1);opacity:.9"
+      onerror="this.outerHTML='<span style=\\'font-weight:900;font-size:.85rem;opacity:.85\\'>${brand.name.slice(0,4).toUpperCase()}</span>'">`;
+  } else {
+    logoEl.innerHTML='';
+  }
+}
+
 function openCardMo(id){
-  if(id){const c=getCard(id);if(!c)return;document.getElementById('card-mo-title').textContent='Editar Cartão';document.getElementById('cd-id').value=id;document.getElementById('cd-name').value=c.name;document.getElementById('cd-limit').value=c.limit;document.getElementById('cd-color').value=c.color;document.getElementById('cd-close').value=c.closeDay;document.getElementById('cd-due').value=c.dueDay;}
-  else{document.getElementById('card-mo-title').textContent='Novo Cartão';['cd-id','cd-name','cd-limit','cd-close','cd-due'].forEach(i=>document.getElementById(i).value='');}
+  const defaultGrad=CARD_BRANDS[0].grad;
+  if(id){
+    const c=getCard(id);if(!c)return;
+    document.getElementById('card-mo-title').textContent='Editar Cartão';
+    document.getElementById('cd-id').value=id;
+    document.getElementById('cd-name').value=c.name;
+    document.getElementById('cd-limit').value=c.limit;
+    document.getElementById('cd-close').value=c.closeDay;
+    document.getElementById('cd-due').value=c.dueDay;
+    const grad=getCardGrad(c);
+    document.getElementById('cd-gradient').value=grad;
+    document.getElementById('cd-brand-id').value=c.brandId||'';
+    const brand=getCardBrand(c);
+    applyPreviewGrad(grad, brand);
+    document.getElementById('cd-brand-grid').innerHTML=buildBrandGrid(grad);
+    // update preview fields
+    document.getElementById('cdp-name').textContent=c.name;
+    document.getElementById('cdp-limit').textContent=fm(c.limit);
+    document.getElementById('cdp-close').textContent='Dia '+c.closeDay;
+    document.getElementById('cdp-due').textContent='Dia '+c.dueDay;
+  } else {
+    document.getElementById('card-mo-title').textContent='Novo Cartão';
+    ['cd-id','cd-name','cd-limit','cd-close','cd-due'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('cd-gradient').value=defaultGrad;
+    document.getElementById('cd-brand-id').value='';
+    applyPreviewGrad(defaultGrad, CARD_BRANDS[0]);
+    document.getElementById('cd-brand-grid').innerHTML=buildBrandGrid(defaultGrad);
+    document.getElementById('cdp-name').textContent='Meu Cartão';
+    document.getElementById('cdp-limit').textContent='—';
+    document.getElementById('cdp-close').textContent='Dia —';
+    document.getElementById('cdp-due').textContent='Dia —';
+  }
+  document.getElementById('cd-custom-row').style.display='none';
   openMo('mo-card');
 }
+
 function saveCard(){
-  const id=document.getElementById('cd-id').value,name=document.getElementById('cd-name').value.trim(),limit=parseFloat(document.getElementById('cd-limit').value),color=document.getElementById('cd-color').value,closeDay=parseInt(document.getElementById('cd-close').value),dueDay=parseInt(document.getElementById('cd-due').value);
+  const id=document.getElementById('cd-id').value;
+  const name=document.getElementById('cd-name').value.trim();
+  const limit=parseFloat(document.getElementById('cd-limit').value);
+  const closeDay=parseInt(document.getElementById('cd-close').value);
+  const dueDay=parseInt(document.getElementById('cd-due').value);
+  const gradient=document.getElementById('cd-gradient').value||CARD_BRANDS[0].grad;
+  const brandId=document.getElementById('cd-brand-id').value||null;
   if(!name||!limit||!closeDay||!dueDay){toast('Preencha todos os campos','error');return}
-  if(id) Object.assign(getCard(id),{name,limit,color,closeDay,dueDay});
-  else S.cards.push({id:uid(),name,limit,color,closeDay,dueDay});
+  const obj={name,limit,closeDay,dueDay,gradient,brandId};
+  if(id) Object.assign(getCard(id),obj);
+  else S.cards.push({id:uid(),...obj});
   persist();closeMo('mo-card');rendCards();updPay();toast('Cartão salvo!');
 }
 function delCard(id){if(!confirm('Excluir cartão?'))return;S.cards=S.cards.filter(c=>c.id!==id);persist();rendCards();toast('Cartão excluído')}
