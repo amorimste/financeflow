@@ -144,6 +144,28 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 @keyframes sin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes sout{from{opacity:1}to{opacity:0;transform:translateY(8px)}}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+/* ── EMOJI PICKER ── */
+#ep-wrap{position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;width:310px;box-shadow:0 16px 48px rgba(0,0,0,.65);display:none;flex-direction:column;gap:8px}
+#ep-search{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:16px;outline:none;font-family:inherit;width:100%}
+#ep-search:focus{border-color:var(--green)}
+.ep-cats{display:flex;gap:3px;overflow-x:auto;padding-bottom:2px}
+.ep-cats::-webkit-scrollbar{height:3px}
+.ep-cat{padding:5px 7px;border-radius:8px;cursor:pointer;font-size:1.15rem;border:none;background:transparent;transition:background .15s;min-width:36px;min-height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ep-cat:hover{background:var(--border)}
+.ep-cat.active{background:var(--green);font-size:1rem}
+#ep-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:1px;overflow-y:auto;max-height:195px}
+#ep-grid::-webkit-scrollbar{width:4px}
+.ep-btn{border:none;background:transparent;font-size:1.3rem;cursor:pointer;padding:5px 3px;border-radius:6px;transition:background .15s;line-height:1;text-align:center;min-height:36px}
+.ep-btn:hover{background:var(--border);transform:scale(1.2)}
+.ep-open-btn{padding:0 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:1.2rem;color:var(--text);transition:all .2s;min-height:42px;min-width:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ep-open-btn:hover{background:var(--border)}
+.ep-input-row{display:flex;gap:6px;align-items:stretch}
+.ep-input-row input{flex:1;min-width:0}
+@media(max-width:480px){
+  #ep-wrap{width:calc(100vw - 24px);max-width:310px}
+  #ep-grid{grid-template-columns:repeat(7,1fr)}
+  .ep-btn{font-size:1.2rem}
+}
 /* ── CARD BRAND PICKER ── */
 .brand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:7px;max-height:240px;overflow-y:auto;padding:2px}
 .brand-chip{border-radius:10px;padding:8px 6px;cursor:pointer;text-align:center;border:2px solid transparent;transition:all .2s;background:var(--card2)}
@@ -675,7 +697,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <input type="hidden" id="gl-id">
     <div class="fr">
       <div class="fg"><label>Nome da Meta *</label><input type="text" id="gl-name" placeholder="Ex: Viagem para Europa"></div>
-      <div class="fg"><label>Emoji / Ícone</label><input type="text" id="gl-icon" placeholder="✈️" maxlength="2"></div>
+      <div class="fg"><label>Emoji / Ícone</label>
+        <div class="ep-input-row">
+          <input type="text" id="gl-icon" placeholder="✈️" maxlength="2">
+          <button type="button" class="ep-open-btn" onclick="openEmojiPicker('gl-icon',this)" title="Escolher emoji">😀</button>
+        </div>
+      </div>
     </div>
     <div class="fr">
       <div class="fg"><label>Valor Total (R$) *</label><input type="number" id="gl-target" placeholder="10000" step="0.01" inputmode="decimal"></div>
@@ -733,7 +760,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <input type="hidden" id="ct-id">
     <div class="fg"><label>Nome *</label><input type="text" id="ct-name" placeholder="Ex: Academia, Pets..."></div>
     <div class="fr">
-      <div class="fg"><label>Emoji</label><input type="text" id="ct-icon" placeholder="🏋️" maxlength="2"></div>
+      <div class="fg"><label>Emoji</label>
+        <div class="ep-input-row">
+          <input type="text" id="ct-icon" placeholder="🏋️" maxlength="2">
+          <button type="button" class="ep-open-btn" onclick="openEmojiPicker('ct-icon',this)" title="Escolher emoji">😀</button>
+        </div>
+      </div>
       <div class="fg"><label>Cor</label><input type="color" id="ct-color" value="#7c6af7" style="height:42px;cursor:pointer"></div>
     </div>
     <div class="mdf">
@@ -836,6 +868,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <button class="btn btn-p" id="pdf-confirm-btn" style="display:none;flex:1" onclick="confirmPdfImport()">Importar</button>
     </div>
   </div>
+</div>
+
+<!-- EMOJI PICKER -->
+<div id="ep-overlay" style="display:none;position:fixed;inset:0;z-index:9998" onclick="closeEmojiPicker()"></div>
+<div id="ep-wrap">
+  <input type="text" id="ep-search" placeholder="🔍 Pesquisar emoji..." oninput="epSearch(this.value)">
+  <div class="ep-cats" id="ep-cats"></div>
+  <div id="ep-grid"></div>
 </div>
 
 <div class="tc-cont" id="tc"></div>
@@ -2058,6 +2098,97 @@ function confirmPdfImport() {
   const imported = toAdd.length - dupes;
   toast(`${imported} transação(ões) importada(s)!${dupes?' ('+dupes+' duplicata(s) ignorada(s))':''} 📄`);
   if (document.getElementById('sec-extrato').classList.contains('active')) rendExt();
+}
+
+// ── EMOJI PICKER ───────────────────────────────────────────
+const EP_DATA={
+  '😀 Rostos':['😀','😃','😄','😁','😂','🤣','😊','😇','🥰','😍','🤩','😎','🤓','🧐','😏','😒','😔','😟','😕','🙁','☹️','😣','😫','😩','🥺','😢','😭','😤','😠','😡','🤬','😳','🥵','🥶','😱','😰','😓','🤗','🤔','🤭','🤫','😶','😑','😬','🙄','😴','😵','🤯','🤠','🥳','😷','🤒','🤕','🤢','🤧','😈','👿','💀','☠️','👻','👽','🤖','💩','😺','😸','😻','😼','😽','🙀','😿','😾'],
+  '🙌 Gestos':['👋','🤚','🖐️','✋','🖖','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🙏','💪','🦾','🖕','✍️','💅','🤳','💆','💇','🧖','🧗','🏋️','🤸','🤺','🤼','🤾','🤹','🧘','🛀','👶','🧒','👦','👧','🧑','👱','🧔','👴','👵','🧓','👮','🕵️','👷','🧙','🧝','🧛','🧟','🧞','🧜','🧚','👼'],
+  '🐱 Animais':['🐶','🐱','🐭','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐔','🐧','🐦','🦆','🦅','🦉','🦇','🐺','🐴','🦄','🐝','🦋','🐛','🐞','🐢','🐍','🦎','🦕','🦖','🐙','🦑','🐡','🐠','🐟','🐬','🐳','🦈','🐊','🦁','🐆','🦓','🦍','🐘','🦛','🦏','🦒','🦘','🦬','🐃','🐑','🐕','🐈','🐓','🕊️','🐇','🦔','🦟','🦗','🕷️','🐉','🦕','🌸'],
+  '🍕 Comida':['🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🥑','🥦','🥕','🌽','🧅','🥔','🍳','🧈','🥞','🍔','🍟','🍕','🌮','🌯','🥪','🧆','🍜','🍝','🍛','🍲','🍱','🍣','🍤','🍙','🍚','🍘','🍡','🍢','🍧','🍨','🍦','🍰','🎂','🧁','🍮','🍭','🍬','🍫','🍿','🍩','🍪','☕','🍵','🧃','🥤','🧋','🍺','🍷','🥂','🍾','🧉','🍸','🍹','🥃','🧊'],
+  '🏠 Lugares':['🏠','🏡','🏢','🏣','🏤','🏥','🏦','🏨','🏩','🏪','🏫','🏬','🏭','🏯','🏰','🗼','🗽','⛪','🕌','⛩️','🕋','⛲','🌋','🏔️','⛰️','🏝️','🏖️','🏕️','🗺️','🌅','🌆','🌇','🌉','🌃','🏙️','🌌','🎠','🎡','🎢','🚂','🚃','🚄','🚅','🚇','🚌','🚎','🏎️','🚓','🚑','🚒','🛻','🚚','🚛','🚜','🏍️','🛵','🚲','🛴','✈️','🚀','🛸','🚁','🛶','⛵','🚤','🛳️','🚢','⛽','🚦','🛣️'],
+  '🎮 Atividades':['⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','🎽','⛷️','🏂','🏋️','🤸','🤺','⛹️','🤾','🏌️','🏄','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🎯','🎲','🎮','🎰','🧩','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🎸','🎺','🎷','🥁','🎪','🎠','🎡','🎢','🎫','🎟️','🃏','🀄','🎴','🧸','🪆','🪁','🏹','🎣','🤿','🪃','🛹','🛷','⛸️','🤿','🪂','🏇'],
+  '💡 Objetos':['💰','💴','💵','💶','💷','💸','💳','🪙','📱','💻','🖥️','⌨️','🖱️','🖨️','📷','📸','📺','📻','☎️','📞','📟','📠','🔋','🔌','💡','🔦','🕯️','📚','📖','📝','✏️','🖊️','🖋️','📎','📌','📍','✂️','🗑️','🔐','🔑','🗝️','🔒','🔓','🔨','⚒️','🛠️','🔧','🔩','🪛','🧲','⚙️','🪜','🧯','🛒','🎁','📦','🏷️','✉️','📧','📨','📩','📤','📥','📊','📈','📉','🗂️','📰','📋','📌','🩺','💊','🩹','🏋️','🛋️','🛏️','🛁','🚿','🪞','🚪'],
+  '❤️ Símbolos':['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','⭐','🌟','💫','✨','⚡','🔥','💥','❄️','🌊','🎵','🎶','🎀','🎊','🎉','🎈','✅','❌','⭕','🛑','💯','❓','❗','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🔶','🔷','🔸','🔹','🔺','🔻','💠','🏳️','🏴','🚩','🏁','🚀','💤','♻️','⚜️','🔱','💎','🪩','🧨','🎆','🎇'],
+  '🌿 Natureza':['🌸','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌿','☘️','🍀','🍃','🍂','🍁','🍄','🌾','💐','🎋','🎍','🌵','🎄','🌲','🌳','🌴','🪵','🌊','🌬️','🌀','🌈','⛅','🌤️','🌩️','🌨️','❄️','☃️','⛄','🌡️','☀️','🌝','🌛','🌜','🌚','🌕','🌙','🌟','⭐','🌠','🌌','🪐','☄️','🔥','💧','🌊','🐾','🍀','🌻','🦋','🐝','🪴','🌵','🎃','🪺','🫧'],
+};
+const EP_FLAT=Object.values(EP_DATA).flat();
+let epTarget=null, epCat=Object.keys(EP_DATA)[0];
+
+function openEmojiPicker(targetId, trigger){
+  epTarget=targetId;
+  epCat=Object.keys(EP_DATA)[0];
+  const picker=document.getElementById('ep-wrap');
+  picker.style.display='flex';
+  document.getElementById('ep-overlay').style.display='block';
+  document.getElementById('ep-search').value='';
+  // Build category tabs
+  document.getElementById('ep-cats').innerHTML=Object.keys(EP_DATA).map(k=>`
+    <button class="ep-cat ${k===epCat?'active':''}" onclick="epSetCat('${k}')" title="${k}">${k.split(' ')[0]}</button>`).join('');
+  renderEpGrid(EP_DATA[epCat]);
+  // Position
+  positionPicker(trigger);
+  setTimeout(()=>document.getElementById('ep-search').focus(),50);
+}
+
+function positionPicker(trigger){
+  const picker=document.getElementById('ep-wrap');
+  const rect=trigger.getBoundingClientRect();
+  const pw=310, ph=340;
+  // Vertical
+  let top=rect.bottom+6;
+  if(top+ph>window.innerHeight-12) top=Math.max(12,rect.top-ph-6);
+  // Horizontal
+  let left=rect.left;
+  if(left+pw>window.innerWidth-12) left=window.innerWidth-pw-12;
+  left=Math.max(12,left);
+  picker.style.top=top+'px';
+  picker.style.left=left+'px';
+}
+
+function closeEmojiPicker(){
+  document.getElementById('ep-wrap').style.display='none';
+  document.getElementById('ep-overlay').style.display='none';
+  epTarget=null;
+}
+
+function epSetCat(cat){
+  epCat=cat;
+  document.querySelectorAll('.ep-cat').forEach(b=>b.classList.toggle('active',b.title===cat));
+  document.getElementById('ep-search').value='';
+  renderEpGrid(EP_DATA[cat]);
+}
+
+function epSearch(q){
+  if(!q.trim()){renderEpGrid(EP_DATA[epCat]);return;}
+  const results=EP_FLAT.filter(e=>{
+    try{return e.includes(q)||[...e].some(c=>c.codePointAt(0).toString(16).includes(q.toLowerCase()))}catch{return false}
+  });
+  // Also search by keyword in category names
+  const kw=q.toLowerCase();
+  const kwResults=Object.entries(EP_DATA)
+    .filter(([k])=>k.toLowerCase().includes(kw))
+    .flatMap(([,v])=>v);
+  const merged=[...new Set([...results,...kwResults])];
+  renderEpGrid(merged.length?merged:EP_FLAT.filter((_,i)=>i<64));
+}
+
+function renderEpGrid(emojis){
+  document.getElementById('ep-grid').innerHTML=emojis.map(e=>
+    `<button class="ep-btn" onclick="pickEmoji('${encodeURIComponent(e)}')" title="${e}">${e}</button>`
+  ).join('');
+}
+
+function pickEmoji(encoded){
+  const e=decodeURIComponent(encoded);
+  if(epTarget){
+    const input=document.getElementById(epTarget);
+    if(input){
+      input.value=e;
+      input.dispatchEvent(new Event('input'));
+    }
+  }
+  closeEmojiPicker();
 }
 
 // ── EXPORT / IMPORT ────────────────────────────────────────
