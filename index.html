@@ -1398,66 +1398,146 @@ function rendAiAnalysis(m,y){
   const cur={m:now.getMonth(),y:now.getFullYear()};
   if(m===cur.m&&y===cur.y) m=now.getMonth();
 
-  // Coletar despesas do período
+  // ========== COLETA DE DADOS ==========
   const start=`${y}-${String(m+1).padStart(2,'0')}-01`;
   const end=`${y}-${String(m+2).padStart(2,'0')}-00`;
   const txns=S.txns.filter(t=>t.type==='expense'&&t.date>=start&&t.date<end);
+  const incomes=S.txns.filter(t=>t.type==='income'&&t.date>=start&&t.date<end);
   const totalExp=txns.reduce((s,t)=>s+Number(t.value),0);
+  const totalInc=incomes.reduce((s,t)=>s+Number(t.value),0);
+  const creditTxns=txns.filter(t=>t.payment==='credit'||t.payment==='credit-installment');
+  const creditExp=creditTxns.reduce((s,t)=>s+Number(t.value),0);
 
-  // Análise por categoria
+  // ========== ANÁLISES ESPECIALIZADAS ==========
+  const insights=[];
+
+  // 1. ANÁLISE DE CARTÃO DE CRÉDITO
+  if(creditTxns.length>0){
+    const creditPct=creditExp/totalExp*100;
+    insights.push(`💳 <strong>${creditPct.toFixed(0)}% dos gastos no crédito</strong> (${fm(creditExp)}). Cuidado com parcelados desnecessários!`);
+
+    // Detecta gasto muito alto em um único cartão
+    const byCard={};
+    creditTxns.forEach(t=>{if(t.cardId){
+      const card=getCard(t.cardId);
+      if(card) byCard[card.name]=(byCard[card.name]||0)+Number(t.value);
+    }});
+    Object.entries(byCard).forEach(([name,val])=>{
+      const pct=totalExp>0?val/totalExp*100:0;
+      if(pct>40) insights.push(`⚠️ <strong>${name}</strong> concentra ${pct.toFixed(0)}% dos gastos. Diversifique formas de pagamento.`);
+    });
+  }
+
+  // 2. ANÁLISE DE CATEGORIAS EXCESSIVAS
   const bycat={};
   txns.forEach(t=>{bycat[t.category]=(bycat[t.category]||0)+Number(t.value)});
   const catlist=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
 
-  // Insights
-  const insights=[];
+  catlist.forEach(([cat,val])=>{
+    const pct=totalExp>0?val/totalExp*100:0;
+    const budget=S.budgets[cat];
+    if(budget&&budget.limit>0){
+      const over=val-budget.limit;
+      const overpct=(over/budget.limit*100);
+      if(over>0){
+        insights.push(`📊 <strong>${cat}</strong> ${overpct>50?'MUITO ':''}acima do limite: ${fm(over)} excedido (${fm(val)} vs ${fm(budget.limit)})`);
+      }
+    } else if(pct>40){
+      insights.push(`⚠️ <strong>${cat}</strong> é ${pct.toFixed(0)}% do seu gasto total. Muito alto!`);
+    }
+  });
 
-  if(catlist.length>0){
-    const top=catlist[0];
-    const pct=totalExp>0?top[1]/totalExp*100:0;
-    if(pct>35) insights.push(`⚠️ <strong>${top[0]}</strong> representa ${pct.toFixed(0)}% dos seus gastos. Considere revisar.`);
+  // 3. SAÚDE FINANCEIRA GERAL
+  const investido=S.investments.reduce((s,i)=>s+Number(i.invested),0);
+  const débitos=S.debts.reduce((s,d)=>s+Number(d.amount),0);
+  const saldo=totalInc-totalExp;
+  const taxaPoupança=totalInc>0?saldo/totalInc*100:0;
+
+  if(taxaPoupança<0) insights.push(`🚨 <strong>Gasto maior que receita!</strong> Você gastou ${fm(Math.abs(saldo))} a mais do que recebeu.`);
+  else if(taxaPoupança<10) insights.push(`⚠️ Taxa de poupança baixa (${taxaPoupança.toFixed(0)}%). Ideal é 20-30% da renda.`);
+  else if(taxaPoupança>=20) insights.push(`✅ Excelente taxa de poupança (${taxaPoupança.toFixed(0)}%). Continue assim!`);
+
+  // 4. ANÁLISE DE ENDIVIDAMENTO
+  if(débitos>0){
+    const ratioDiv=débitos/totalInc*100;
+    if(ratioDiv>50) insights.push(`🔴 Dívidas representam ${ratioDiv.toFixed(0)}% da sua renda. Priorize quitação!`);
+    else if(ratioDiv>30) insights.push(`⚠️ Nível de endividamento moderado (${ratioDiv.toFixed(0)}%). Procure reduzir.`);
   }
 
-  // Gastos desnecessários detectados
-  const unnecLim=Object.entries(S.budgets).filter(([c,b])=>b.limit>0&&bycat[c]>b.limit);
-  unnecLim.forEach(([c,b])=>{
-    const over=bycat[c]-b.limit;
-    insights.push(`📊 <strong>${c}</strong> ultrapassou em ${fm(over)} (limite: ${fm(b.limit)}, gasto: ${fm(bycat[c])})`);
-  });
+  // 5. SUGESTÕES DE INVESTIMENTO
+  const investPerc=totalInc>0?investido/totalInc*100:0;
+  if(investPerc<5) insights.push(`💹 <strong>Muito pouco investido!</strong> Se ganha ${fm(totalInc)}, deveria estar aplicando pelo menos 10%.`);
+  else if(investPerc<15) insights.push(`💰 <strong>Aumente investimentos:</strong> Seu potencial é de ${fm(totalInc*0.15)}/mês a 15% da renda.`);
 
-  // Recomendações de metas
-  S.goals.filter(g=>g.currentAmount<g.targetAmount).forEach(g=>{
+  // Sugestões de tipo de investimento
+  if(S.recurringIncomes.filter(i=>i.category==='Salário').length>0&&investido===0){
+    insights.push(`🏦 Comece com Poupança ou CDB (seguro, 8-10% a.a.) antes de ações.`);
+  }
+
+  // 6. METAS COM PRAZO CRÍTICO
+  S.goals.forEach(g=>{
+    if(g.currentAmount>=g.targetAmount) return;
     const needed=g.targetAmount-g.currentAmount;
-    const days=Math.max(1,daysLeft(g.deadline)||30);
-    const perDay=needed/days;
-    insights.push(`🎯 Para atingir <strong>${g.name}</strong>, economize ${fm(perDay)}/dia (${fm(needed)} em ${days} dias)`);
+    const days=daysLeft(g.deadline);
+    if(days!==null&&days>0){
+      const perDay=needed/days;
+      if(days<=7) insights.push(`🎯 <strong>${g.name}</strong> vence em ${days} dia(s)! Precisa de ${fm(perDay)}/dia.`);
+      else if(days<=30){
+        const mensal=perDay*30;
+        const current_savings=saldo;
+        if(mensal>current_savings) insights.push(`⚠️ Meta <strong>${g.name}</strong> exige ${fm(mensal)}/mês, mas você poupa apenas ${fm(current_savings)}.`);
+      }
+    }
   });
 
-  // Investimentos + economias
-  const investidoTotal=S.investments.reduce((s,i)=>s+Number(i.invested),0);
-  const investPerc=investidoTotal>0?investidoTotal/(investidoTotal+totalExp)*100:0;
-  if(investPerc<10&&investidoTotal>0) insights.push(`💹 Você investe apenas ${investPerc.toFixed(0)}% de seus gastos. Aumente investimentos!`);
+  // 7. ECONOMIA POTENCIAL
+  const topCat=catlist[0];
+  if(topCat){
+    const [cat,val]=topCat;
+    const possibleCut=val*0.1; // 10% de redução
+    insights.push(`💡 <strong>Economia rápida:</strong> Reduz 10% de ${cat} (${fm(possibleCut)}) = ${fm(possibleCut*12)}/ano!`);
+  }
 
-  // Cartões de crédito alertas
-  S.cards.forEach(card=>{
-    const fatAtual=getCurrentFatura(card);
-    const pct=card.limit>0?getCardLimitUsed(card)/card.limit*100:0;
-    if(pct>75) insights.push(`💳 <strong>${card.name}</strong> está ${pct.toFixed(0)}% utilizado (limite: ${fm(card.limit)})`);
-  });
+  // 8. DETECÇÃO DE PADRÕES
+  if(creditExp>totalExp*0.7) insights.push(`⚠️ Mais de 70% do gasto é parcelado. Risco de comprometer meses futuros!`);
 
+  const countTxns=txns.length;
+  if(countTxns>80) insights.push(`📌 ${countTxns} transações este mês. Consolidar pequenos gastos = menos confusão.`);
+
+  // 9. RECEITAS FIXAS
+  if(S.recurringIncomes.length===0) insights.push(`💰 Configure receitas fixas (salário, etc) para análise automática.`);
+
+  // ========== RENDERIZAÇÃO ==========
   if(insights.length===0){
     document.getElementById('ai-analysis').innerHTML=`<div class="card" style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);padding:14px;border-radius:10px;text-align:center;color:var(--green)">
-      🤖 <strong>Análise IA:</strong> Parabéns! Seus gastos estão equilibrados e metas encaminhadas!
+      🤖 <strong>Análise IA:</strong> Seus gastos estão ótimos! Continue no caminho certo 🎯
     </div>`;
     return;
   }
 
+  // Separa insights por severidade
+  const críticos=insights.filter(i=>i.startsWith('🚨')||i.startsWith('🔴'));
+  const alertas=insights.filter(i=>i.startsWith('⚠️'));
+  const neutros=insights.filter(i=>!i.startsWith('🚨')&&!i.startsWith('🔴')&&!i.startsWith('⚠️'));
+
+  const ordenados=[...críticos,...alertas,...neutros];
+
   document.getElementById('ai-analysis').innerHTML=`<div class="card" style="border:1px solid var(--border);padding:14px;border-radius:10px">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:700;color:var(--blue)">🤖 Análise & Recomendações</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${insights.slice(0,5).map(i=>`<div style="padding:8px 12px;background:rgba(59,130,246,.08);border-left:3px solid var(--blue);border-radius:4px;font-size:.84rem;line-height:1.4">${i}</div>`).join('')}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:700;color:var(--blue)">
+      🤖 Análise Especialista (${ordenados.length} insights)
     </div>
-    ${insights.length>5?`<div style="text-align:center;margin-top:10px;color:var(--text2);font-size:.78rem">+${insights.length-5} recomendações adicionais</div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${ordenados.slice(0,8).map((i,idx)=>{
+        const isCrit=i.startsWith('🚨')||i.startsWith('🔴');
+        const isAlert=i.startsWith('⚠️');
+        const bg=isCrit?'rgba(255,77,109,.12)':isAlert?'rgba(255,159,67,.12)':'rgba(59,130,246,.08)';
+        const brd=isCrit?'rgba(255,77,109,.3)':isAlert?'rgba(255,159,67,.3)':'rgba(59,130,246,.3)';
+        return`<div style="padding:8px 12px;background:${bg};border-left:3px solid ${brd};border-radius:4px;font-size:.82rem;line-height:1.5">${i}</div>`;
+      }).join('')}
+    </div>
+    ${ordenados.length>8?`<div style="text-align:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);color:var(--text2);font-size:.78rem">
+      <strong>+${ordenados.length-8}</strong> análises adicionais disponíveis
+    </div>`:''}
   </div>`;
 }
 
