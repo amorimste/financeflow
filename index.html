@@ -378,6 +378,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div id="dash-inv-strip" style="margin-bottom:14px"></div>
     <div id="dash-budgets"></div>
     <div id="dash-alerts"></div>
+    <!-- AI Analysis -->
+    <div id="ai-analysis" style="margin-top:20px"></div>
   </div>
 </div>
 
@@ -444,29 +446,25 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
         <!-- FORM: INVESTIMENTO -->
         <div id="invest-form" style="display:none">
-          <div class="alert ag" style="margin-bottom:12px">💹 O aporte será registrado diretamente na seção <strong>Investimentos</strong>, sem impactar o extrato de receitas.</div>
-          <div class="fr">
-            <div class="fg"><label>Descrição *</label><input type="text" id="ni-name" placeholder="Ex: Tesouro Selic, Bitcoin..."></div>
-            <div class="fg"><label>Tipo *</label>
-              <select id="ni-type">
-                <option value="poupanca">🏦 Poupança</option>
-                <option value="rendafixa">📄 Renda Fixa (CDB, LCI...)</option>
-                <option value="tesouro">🇧🇷 Tesouro Direto</option>
-                <option value="fundos">📦 Fundos de Investimento</option>
-                <option value="acoes">📈 Ações</option>
-                <option value="fii">🏢 FII</option>
-                <option value="crypto">₿ Criptomoedas</option>
-                <option value="outro">💼 Outro</option>
+          <div class="alert ag" style="margin-bottom:12px">💹 O aporte será registrado diretamente na seção <strong>Investimentos</strong>, com rendimento calculado automaticamente.</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+            <div class="fg" style="flex:1;margin:0"><label>Tipo de Investimento *</label>
+              <select id="ni-type" onchange="updNiType()">
+                <option value="">— Selecione um tipo cadastrado —</option>
               </select>
             </div>
+            <button class="btn btn-sm btn-s" style="margin-top:20px" onclick="openInvTypeMo()">⚙️ Gerenciar</button>
+          </div>
+          <!-- Info do tipo selecionado -->
+          <div id="ni-info" style="display:none;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:9px;padding:10px 14px;font-size:.82rem;color:var(--blue);margin-bottom:12px">
+            <div>📊 Rendimento: <strong id="ni-yield">0% a.a.</strong> (calculado <strong id="ni-freq">mensalmente</strong>)</div>
+            <div style="color:var(--text2);font-size:.75rem;margin-top:4px">Instituição: <strong id="ni-inst-label">—</strong></div>
           </div>
           <div class="fr">
             <div class="fg"><label>Valor Aportado (R$) *</label><input type="number" id="ni-val" step="0.01" inputmode="decimal" placeholder="0,00"></div>
-            <div class="fg"><label>Instituição</label><input type="text" id="ni-inst" placeholder="Ex: Nubank, XP, Binance..."></div>
-          </div>
-          <div class="fr">
             <div class="fg"><label>Data do Aporte *</label><input type="date" id="ni-date"></div>
-            <div class="fg"><label>Notas</label><input type="text" id="ni-notes" placeholder="Opcional..."></div>
+          </div>
+          <div class="fg"><label>Notas (opcional)</label><input type="text" id="ni-notes" placeholder="Ex: Investimento estratégico..."></div>
           </div>
           <button class="btn btn-p" style="background:var(--blue)" onclick="saveInvestLaunch()">💹 Registrar Investimento</button>
         </div>
@@ -753,6 +751,24 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="mdf">
       <button class="btn btn-s" onclick="closeMo('mo-bill')">Cancelar</button>
       <button class="btn btn-p" style="width:auto;flex:1" onclick="saveBill()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Investment Types -->
+<div class="mo" id="mo-inv-type">
+  <div class="md" style="max-width:620px">
+    <div class="md-handle"></div>
+    <h2>Tipos de Investimento</h2>
+    <div id="it-list" style="max-height:40vh;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:10px;padding:0"></div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="text" id="it-name" placeholder="Nome (ex: Poupança Nubank)..." style="flex:1">
+      <input type="number" id="it-yield" placeholder="Rendimento % a.a." step="0.01" style="width:140px">
+      <input type="text" id="it-inst" placeholder="Instituição..." style="width:140px">
+    </div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-inv-type')">Fechar</button>
+      <button class="btn btn-p" style="flex:1" onclick="saveInvType()">➕ Adicionar Tipo</button>
     </div>
   </div>
 </div>
@@ -1083,13 +1099,14 @@ function persist(){
   localStorage.setItem('fp_inv',JSON.stringify(S.investments));
   localStorage.setItem('fp_goals',JSON.stringify(S.goals));
   localStorage.setItem('fp_debts',JSON.stringify(S.debts));
+  localStorage.setItem('fp_inv_types',JSON.stringify(S.investmentTypes));
 }
 function hydrate(){
   const get=k=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}};
   S.txns=get('fp_t')||[];S.cards=get('fp_c')||[];S.bills=get('fp_b')||[];
   S.cats=get('fp_cat')||[...DEF_CATS];S.budgets=get('fp_bud')||{};
   S.investments=get('fp_inv')||[];S.goals=get('fp_goals')||[];
-  S.debts=get('fp_debts')||[];
+  S.debts=get('fp_debts')||[];S.investmentTypes=get('fp_inv_types')||[];
 }
 
 // ── DADOS INICIAIS — 1 exemplo por seção ───────────────────
@@ -1333,6 +1350,77 @@ function rendDash(){
   const billAlerts=S.bills.filter(b=>{if((b.paid||[]).includes(mk(m,y)))return false;const d=b.dueDay-today.getDate();return d>=0&&d<=5;}).map(b=>{const d=b.dueDay-today.getDate();return`<div class="alert ${d===0?'ae':'aw'}">${d===0?'🚨':'⚠️'}<strong>${b.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'} — ${fm(b.value)}</div>`;}).join('');
   const goalAlerts=S.goals.filter(g=>{const d=daysLeft(g.deadline);return d!==null&&d>=0&&d<=30&&g.currentAmount<g.targetAmount;}).map(g=>{const d=daysLeft(g.deadline);return`<div class="alert aw">🎯 Meta <strong>${g.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'}! ${Math.round(g.currentAmount/g.targetAmount*100)}% concluída.</div>`;}).join('');
   document.getElementById('dash-alerts').innerHTML=billAlerts+goalAlerts;
+
+  // IA Analysis
+  rendAiAnalysis(m,y);
+}
+
+function rendAiAnalysis(m,y){
+  const now=new Date();
+  const cur={m:now.getMonth(),y:now.getFullYear()};
+  if(m===cur.m&&y===cur.y) m=now.getMonth();
+
+  // Coletar despesas do período
+  const start=`${y}-${String(m+1).padStart(2,'0')}-01`;
+  const end=`${y}-${String(m+2).padStart(2,'0')}-00`;
+  const txns=S.txns.filter(t=>t.type==='expense'&&t.date>=start&&t.date<end);
+  const totalExp=txns.reduce((s,t)=>s+Number(t.value),0);
+
+  // Análise por categoria
+  const bycat={};
+  txns.forEach(t=>{bycat[t.category]=(bycat[t.category]||0)+Number(t.value)});
+  const catlist=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+
+  // Insights
+  const insights=[];
+
+  if(catlist.length>0){
+    const top=catlist[0];
+    const pct=totalExp>0?top[1]/totalExp*100:0;
+    if(pct>35) insights.push(`⚠️ <strong>${top[0]}</strong> representa ${pct.toFixed(0)}% dos seus gastos. Considere revisar.`);
+  }
+
+  // Gastos desnecessários detectados
+  const unnecLim=Object.entries(S.budgets).filter(([c,b])=>b.limit>0&&bycat[c]>b.limit);
+  unnecLim.forEach(([c,b])=>{
+    const over=bycat[c]-b.limit;
+    insights.push(`📊 <strong>${c}</strong> ultrapassou em ${fm(over)} (limite: ${fm(b.limit)}, gasto: ${fm(bycat[c])})`);
+  });
+
+  // Recomendações de metas
+  S.goals.filter(g=>g.currentAmount<g.targetAmount).forEach(g=>{
+    const needed=g.targetAmount-g.currentAmount;
+    const days=Math.max(1,daysLeft(g.deadline)||30);
+    const perDay=needed/days;
+    insights.push(`🎯 Para atingir <strong>${g.name}</strong>, economize ${fm(perDay)}/dia (${fm(needed)} em ${days} dias)`);
+  });
+
+  // Investimentos + economias
+  const investidoTotal=S.investments.reduce((s,i)=>s+Number(i.invested),0);
+  const investPerc=investidoTotal>0?investidoTotal/(investidoTotal+totalExp)*100:0;
+  if(investPerc<10&&investidoTotal>0) insights.push(`💹 Você investe apenas ${investPerc.toFixed(0)}% de seus gastos. Aumente investimentos!`);
+
+  // Cartões de crédito alertas
+  S.cards.forEach(card=>{
+    const fatAtual=getCurrentFatura(card);
+    const pct=card.limit>0?getCardLimitUsed(card)/card.limit*100:0;
+    if(pct>75) insights.push(`💳 <strong>${card.name}</strong> está ${pct.toFixed(0)}% utilizado (limite: ${fm(card.limit)})`);
+  });
+
+  if(insights.length===0){
+    document.getElementById('ai-analysis').innerHTML=`<div class="card" style="background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);padding:14px;border-radius:10px;text-align:center;color:var(--green)">
+      🤖 <strong>Análise IA:</strong> Parabéns! Seus gastos estão equilibrados e metas encaminhadas!
+    </div>`;
+    return;
+  }
+
+  document.getElementById('ai-analysis').innerHTML=`<div class="card" style="border:1px solid var(--border);padding:14px;border-radius:10px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-weight:700;color:var(--blue)">🤖 Análise & Recomendações</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${insights.slice(0,5).map(i=>`<div style="padding:8px 12px;background:rgba(59,130,246,.08);border-left:3px solid var(--blue);border-radius:4px;font-size:.84rem;line-height:1.4">${i}</div>`).join('')}
+    </div>
+    ${insights.length>5?`<div style="text-align:center;margin-top:10px;color:var(--text2);font-size:.78rem">+${insights.length-5} recomendações adicionais</div>`:''}
+  </div>`;
 }
 
 // ── NOVO LANÇAMENTO ────────────────────────────────────────
@@ -1352,30 +1440,117 @@ function initNovo(){
   document.getElementById('e-cat').innerHTML=S.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
   document.getElementById('e-card').innerHTML=S.cards.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   updPay();
+  updNiTypeOptions();
 }
+// ── INVESTMENT TYPES ───────────────────────────────────────────
+function openInvTypeMo(){
+  rendItList();
+  document.getElementById('it-name').value='';
+  document.getElementById('it-yield').value='';
+  document.getElementById('it-inst').value='';
+  openMo('mo-inv-type');
+}
+
+function rendItList(){
+  if(!S.investmentTypes.length){
+    document.getElementById('it-list').innerHTML=`<div style="padding:20px;text-align:center;color:var(--text2);font-size:.85rem">Nenhum tipo cadastrado ainda</div>`;
+    return;
+  }
+  document.getElementById('it-list').innerHTML=S.investmentTypes.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);justify-content:space-between">
+    <div style="flex:1">
+      <div style="font-weight:500;font-size:.88rem">${t.name}</div>
+      <div style="font-size:.72rem;color:var(--text2)">📊 ${t.yield}% a.a. · ${t.institution}</div>
+    </div>
+    <button class="btn btn-d btn-sm" onclick="delInvType('${t.id}')" style="padding:5px 10px">🗑️</button>
+  </div>`).join('');
+}
+
+function saveInvType(){
+  const name=document.getElementById('it-name').value.trim();
+  const yieldVal=parseFloat(document.getElementById('it-yield').value);
+  const inst=document.getElementById('it-inst').value.trim();
+  if(!name||isNaN(yieldVal)||!inst){toast('Preencha todos os campos','error');return}
+  if(yieldVal<0){toast('Rendimento não pode ser negativo','error');return}
+  S.investmentTypes.push({id:uid(),name,yield:yieldVal,institution:inst});
+  persist();
+  rendItList();
+  updNiTypeOptions();
+  document.getElementById('it-name').value='';
+  document.getElementById('it-yield').value='';
+  document.getElementById('it-inst').value='';
+  toast(`Tipo "${name}" criado!`);
+}
+
+function delInvType(id){
+  if(!confirm('Excluir este tipo?'))return;
+  const t=S.investmentTypes.find(x=>x.id===id);
+  S.investmentTypes=S.investmentTypes.filter(x=>x.id!==id);
+  persist();
+  rendItList();
+  updNiTypeOptions();
+  toast(`${t.name} excluído`);
+}
+
+function updNiTypeOptions(){
+  const select=document.getElementById('ni-type');
+  select.innerHTML=`<option value="">— Selecione um tipo cadastrado —</option>`;
+  select.innerHTML+=S.investmentTypes.map(t=>`<option value="${t.id}">${t.name} (${t.yield}% a.a.)</option>`).join('');
+}
+
+function updNiType(){
+  const typeId=document.getElementById('ni-type').value;
+  const info=document.getElementById('ni-info');
+  if(!typeId){info.style.display='none';return}
+  const type=S.investmentTypes.find(t=>t.id===typeId);
+  if(!type){info.style.display='none';return}
+  document.getElementById('ni-yield').textContent=`${type.yield}% a.a.`;
+  document.getElementById('ni-inst-label').textContent=type.institution;
+  info.style.display='block';
+}
+
 function saveInvestLaunch(){
-  const name=document.getElementById('ni-name').value.trim();
-  const type=document.getElementById('ni-type').value;
+  const typeId=document.getElementById('ni-type').value;
   const val=parseFloat(document.getElementById('ni-val').value);
-  const inst=document.getElementById('ni-inst').value.trim();
   const date=document.getElementById('ni-date').value;
   const notes=document.getElementById('ni-notes').value.trim();
-  if(!name||!val||!date){toast('Preencha os campos obrigatórios','error');return}
+
+  if(!typeId||!val||!date){toast('Preencha os campos obrigatórios','error');return}
   if(val<=0){toast('Valor deve ser positivo','error');return}
-  // Verifica se já existe um investimento com o mesmo nome para fazer aporte
-  const existing=S.investments.find(i=>i.name.toLowerCase()===name.toLowerCase()&&i.type===type);
+
+  const type=S.investmentTypes.find(t=>t.id===typeId);
+  if(!type){toast('Tipo inválido','error');return}
+
+  // Verifica se já existe investimento deste tipo
+  const existing=S.investments.find(i=>i.typeId===typeId);
   if(existing){
     existing.invested=Number(existing.invested)+val;
     existing.currentValue=Number(existing.currentValue)+val;
+    existing.lastAportDate=date;
     if(notes) existing.notes=notes;
-    toast(`Aporte de ${fm(val)} adicionado a "${name}"! 💹`);
+    toast(`Aporte de ${fm(val)} adicionado a "${type.name}"! 💹`);
   }else{
-    S.investments.push({id:uid(),name,institution:inst,type,invested:val,currentValue:val,date,notes});
-    toast(`Investimento "${name}" registrado! 💹`);
+    S.investments.push({
+      id:uid(),
+      typeId,
+      name:type.name,
+      institution:type.institution,
+      yield:type.yield,
+      invested:val,
+      currentValue:val,
+      date,
+      lastAportDate:date,
+      notes,
+      yields:[]  // historico de rendimentos
+    });
+    toast(`Investimento "${type.name}" registrado! 💹`);
   }
+
   persist();
-  document.getElementById('ni-name').value='';document.getElementById('ni-val').value='';
-  document.getElementById('ni-inst').value='';document.getElementById('ni-notes').value='';
+  document.getElementById('ni-val').value='';
+  document.getElementById('ni-date').value='';
+  document.getElementById('ni-notes').value='';
+  document.getElementById('ni-type').value='';
+  updNiType();
 }
 function updPay(){
   const p=document.getElementById('e-pay').value;
@@ -1844,56 +2019,67 @@ function delBill(id){if(!confirm('Excluir conta?'))return;S.bills=S.bills.filter
 
 // ── INVESTIMENTOS ──────────────────────────────────────────
 function rendInv(){
+  // Garantir que o select de tipos está sempre atualizado
+  updNiTypeOptions();
+
   const totInv=S.investments.reduce((s,i)=>s+Number(i.invested),0);
   const totCurr=S.investments.reduce((s,i)=>s+Number(i.currentValue),0);
   const gain=totCurr-totInv;
   const gainPct=totInv>0?(gain/totInv*100):0;
-  const liquid=S.investments.filter(i=>i.type==='poupanca'||i.type==='rendafixa').reduce((s,i)=>s+Number(i.currentValue),0);
 
   document.getElementById('inv-sum-cards').innerHTML=`
     <div class="sc bl"><div class="lbl">Total Investido</div><div class="val bl">${fm(totInv)}</div><div class="sub">${S.investments.length} ativos</div></div>
     <div class="sc ${gain>=0?'gr':'rd'}"><div class="lbl">Valor Atual</div><div class="val ${gain>=0?'gr':'rd'}">${fm(totCurr)}</div><div class="sub">${gain>=0?'+':''}${fm(gain)}</div></div>
     <div class="sc ${gainPct>=0?'gr':'rd'}"><div class="lbl">Rentabilidade</div><div class="val ${gainPct>=0?'gr':'rd'}">${gainPct>=0?'+':''}${gainPct.toFixed(2)}%</div><div class="sub">Desde o início</div></div>
-    <div class="sc yw"><div class="lbl">Liquidez Imediata</div><div class="val yw">${fm(liquid)}</div><div class="sub">Poupança + Renda Fixa</div></div>`;
+    <div class="sc yw"><div class="lbl">Investimentos</div><div class="val yw">${S.investmentTypes.length}</div><div class="sub">Tipos cadastrados</div></div>`;
 
-  // Pie by type
-  const byType={};
-  S.investments.forEach(i=>{byType[i.type]=(byType[i.type]||0)+Number(i.currentValue)});
-  const tKeys=Object.keys(byType);
+  // Pie by investmentType
+  const byTypeId={};
+  S.investments.forEach(i=>{byTypeId[i.name]=(byTypeId[i.name]||0)+Number(i.currentValue)});
+  const tKeys=Object.keys(byTypeId);
   if(cInvPie) cInvPie.destroy();
   const ctx=document.getElementById('inv-pie').getContext('2d');
   if(tKeys.length){
+    const COLORS=['#00c896','#3b82f6','#7c6af7','#ff9f43','#ff4d6d','#fbbf24','#00d9ff','#c084fc'];
     cInvPie=new Chart(ctx,{type:'doughnut',data:{
-      labels:tKeys.map(k=>`${INV_TYPES[k]?.icon||'💼'} ${INV_TYPES[k]?.label||k}`),
-      datasets:[{data:tKeys.map(k=>byType[k]),backgroundColor:tKeys.map(k=>INV_TYPES[k]?.color||'#95a7b7'),borderWidth:2,borderColor:'#1a1d27'}]
+      labels:tKeys,
+      datasets:[{data:tKeys.map(k=>byTypeId[k]),backgroundColor:tKeys.map((k,i)=>COLORS[i%COLORS.length]),borderWidth:2,borderColor:'#1a1d27'}]
     },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:7}},tooltip:{callbacks:{label:c=>` ${fm(c.parsed)}`}}},cutout:'60%'}});
   }
 
-  // Quick cards by type
-  const qCards=Object.entries(byType).map(([type,val])=>{
-    const ti=INV_TYPES[type]||{label:type,icon:'💼',color:'#95a7b7'};
-    const orig=S.investments.filter(i=>i.type===type).reduce((s,i)=>s+Number(i.invested),0);
+  // Quick cards por tipo
+  const qCards=tKeys.map((name,idx)=>{
+    const val=byTypeId[name];
+    const invs=S.investments.filter(i=>i.name===name);
+    const orig=invs.reduce((s,i)=>s+Number(i.invested),0);
     const g=val-orig,gp=orig>0?g/orig*100:0;
-    return`<div class="sc" style="border-left:3px solid ${ti.color}">
-      <div class="lbl">${ti.icon} ${ti.label}</div>
-      <div class="val" style="color:${ti.color};font-size:1rem">${fm(val)}</div>
-      <div class="sub" style="color:${g>=0?'var(--green)':'var(--red)'}">${g>=0?'+':''}${gp.toFixed(1)}%</div>
+    const type=invs[0];
+    const COLORS=['#00c896','#3b82f6','#7c6af7','#ff9f43','#ff4d6d','#fbbf24','#00d9ff','#c084fc'];
+    const color=COLORS[idx%COLORS.length];
+    return`<div class="sc" style="border-left:3px solid ${color}">
+      <div class="lbl">📊 ${name}</div>
+      <div class="val" style="color:${color};font-size:1rem">${fm(val)}</div>
+      <div class="sub" style="color:${g>=0?'var(--green)':'var(--red)'}">${g>=0?'+':''}${gp.toFixed(1)}% · ${type.yield}% a.a.</div>
     </div>`;
   }).join('');
   document.getElementById('inv-quick-cards').innerHTML=qCards;
 
   // List
   if(!S.investments.length){document.getElementById('inv-list').innerHTML=`<div class="es"><div class="ei">💹</div><p>Nenhum investimento cadastrado</p></div>`;return}
+  const COLORS=['#00c896','#3b82f6','#7c6af7','#ff9f43','#ff4d6d','#fbbf24','#00d9ff','#c084fc'];
+  let colorIdx=0;
   document.getElementById('inv-list').innerHTML=S.investments.map(inv=>{
-    const ti=INV_TYPES[inv.type]||{label:inv.type,icon:'💼',color:'#95a7b7'};
     const g=Number(inv.currentValue)-Number(inv.invested);
     const gp=Number(inv.invested)>0?g/Number(inv.invested)*100:0;
+    const color=COLORS[(colorIdx++)%COLORS.length];
+    const rendMensal=inv.yield?Number(inv.invested)*(inv.yield/100/12):0;
     return`<div class="inv-card">
-      <div class="inv-icon" style="background:${ti.color}22">${ti.icon}</div>
+      <div class="inv-icon" style="background:${color}22;color:${color}">📊</div>
       <div class="inv-info">
         <div class="inv-name">${inv.name}</div>
-        <div class="inv-type">${ti.label}${inv.institution?' · '+inv.institution:''}</div>
-        ${inv.notes?`<div style="font-size:.72rem;color:var(--text2);margin-top:2px">${inv.notes}</div>`:''}
+        <div class="inv-type">${inv.institution?inv.institution:'Sem instituição'}${inv.yield?' · '+inv.yield+'% a.a.':''}</div>
+        ${rendMensal>0?`<div style="font-size:.72rem;color:var(--green);margin-top:2px">📈 Rendimento esperado: ${fm(rendMensal)}/mês</div>`:''}
+        ${inv.notes?`<div style="font-size:.72rem;color:var(--text2)">${inv.notes}</div>`:''}
       </div>
       <div class="inv-vals">
         <div class="inv-curr">${fm(inv.currentValue)}</div>
