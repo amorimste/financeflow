@@ -1118,7 +1118,7 @@ const INV_TYPES={poupanca:{label:'Poupança',icon:'🏦',color:'#2ecc71'},rendaf
 const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── STATE ──────────────────────────────────────────────────
-let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],debts:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
+let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],debts:[],investmentTypes:[],recurringIncomes:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
 let cPie=null,cBar=null,cInvPie=null;
 
 // ── PERSISTENCE ────────────────────────────────────────────
@@ -1329,6 +1329,7 @@ function rendDash(){
     <div class="sc bl"><div class="lbl">Em Investimentos</div><div class="val bl">${fm(totInvested)}</div><div class="sub">${S.investments.length} ativos</div></div>`;
 
   // Pie — usa TODOS os gastos (real + crédito) para mostrar onde o dinheiro foi
+  const totExp=exps.reduce((s,t)=>s+Number(t.value),0); // total para % no tooltip
   const catTot={};
   exps.forEach(t=>{catTot[t.category]=(catTot[t.category]||0)+Number(t.value)});
   const ks=Object.keys(catTot);
@@ -1338,7 +1339,7 @@ function rendDash(){
     cPie=new Chart(ctx1,{type:'doughnut',data:{
       labels:ks.map(k=>{const c=getCat(k);return`${c.icon} ${k}`}),
       datasets:[{data:ks.map(k=>catTot[k]),backgroundColor:ks.map(k=>getCat(k).color),borderWidth:2,borderColor:'#1a1d27'}]
-    },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:7}},tooltip:{callbacks:{label:c=>` ${fm(c.parsed)} (${Math.round(c.parsed/totExp*100)}%)`}}},cutout:'60%'}});
+    },options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:10},padding:7}},tooltip:{callbacks:{label:c=>` ${fm(c.parsed)} (${totExp>0?Math.round(c.parsed/totExp*100):0}%)`}}},cutout:'60%'}});
   }else{
     ctx1.clearRect(0,0,ctx1.canvas.width,ctx1.canvas.height);
   }
@@ -1384,8 +1385,10 @@ function rendDash(){
   const billAlerts=S.bills.filter(b=>{if((b.paid||[]).includes(mk(m,y)))return false;const d=b.dueDay-today.getDate();return d>=0&&d<=5;}).map(b=>{const d=b.dueDay-today.getDate();return`<div class="alert ${d===0?'ae':'aw'}">${d===0?'🚨':'⚠️'}<strong>${b.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'} — ${fm(b.value)}</div>`;}).join('');
   const goalAlerts=S.goals.filter(g=>{const d=daysLeft(g.deadline);return d!==null&&d>=0&&d<=30&&g.currentAmount<g.targetAmount;}).map(g=>{const d=daysLeft(g.deadline);return`<div class="alert aw">🎯 Meta <strong>${g.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'}! ${Math.round(g.currentAmount/g.targetAmount*100)}% concluída.</div>`;}).join('');
 
-  // Receitas fixas próximas
-  const incAlerts=S.recurringIncomes.filter(inc=>{const d=inc.day-today.getDate();return d>=0&&d<=5;}).map(inc=>{const d=inc.day-today.getDate();const totalVal=S.recurringIncomes.filter(i=>i.day===inc.day).reduce((s,i)=>s+Number(i.value),0);return`<div class="alert ag">${d===0?'💰':'📅'}<strong>${d===0?'Receitas chegando HOJE':'Receitas em '+d+' dia(s)'}</strong> — ${fm(totalVal)}</div>`;}).join('');
+  // Receitas fixas próximas — agrupa por dia para evitar duplicatas
+  const incByDay={};
+  S.recurringIncomes.forEach(inc=>{const d=inc.day-today.getDate();if(d>=0&&d<=5){if(!incByDay[inc.day])incByDay[inc.day]={d,total:0,count:0};incByDay[inc.day].total+=Number(inc.value);incByDay[inc.day].count++;}});
+  const incAlerts=Object.entries(incByDay).sort((a,b)=>a[0]-b[0]).map(([day,info])=>`<div class="alert ag">${info.d===0?'💰':'📅'} <strong>${info.d===0?'Receita chegando HOJE':'Receita em '+info.d+' dia(s)'}</strong> — ${fm(info.total)} (${info.count} lançamento${info.count>1?'s':''})</div>`).join('');
 
   document.getElementById('dash-alerts').innerHTML=billAlerts+goalAlerts+incAlerts;
 
@@ -1435,12 +1438,12 @@ function rendAiAnalysis(m,y){
 
   catlist.forEach(([cat,val])=>{
     const pct=totalExp>0?val/totalExp*100:0;
-    const budget=S.budgets[cat];
-    if(budget&&budget.limit>0){
-      const over=val-budget.limit;
-      const overpct=(over/budget.limit*100);
+    const budgetLim=Number(S.budgets[cat])||0;  // budgets são números simples
+    if(budgetLim>0){
+      const over=val-budgetLim;
       if(over>0){
-        insights.push(`📊 <strong>${cat}</strong> ${overpct>50?'MUITO ':''}acima do limite: ${fm(over)} excedido (${fm(val)} vs ${fm(budget.limit)})`);
+        const overpct=(over/budgetLim*100);
+        insights.push(`📊 <strong>${cat}</strong> ${overpct>50?'MUITO ':''}acima do orçamento: ${fm(over)} excedido (${fm(val)} de ${fm(budgetLim)})`);
       }
     } else if(pct>40){
       insights.push(`⚠️ <strong>${cat}</strong> é ${pct.toFixed(0)}% do seu gasto total. Muito alto!`);
@@ -1449,7 +1452,7 @@ function rendAiAnalysis(m,y){
 
   // 3. SAÚDE FINANCEIRA GERAL
   const investido=S.investments.reduce((s,i)=>s+Number(i.invested),0);
-  const débitos=S.debts.reduce((s,d)=>s+Number(d.amount),0);
+  const débitos=S.debts.reduce((s,d)=>s+Number(d.currentAmount||d.amount||0),0);
   const saldo=totalInc-totalExp;
   const taxaPoupança=totalInc>0?saldo/totalInc*100:0;
 
@@ -3146,38 +3149,44 @@ function importData(input){
 }
 
 // ── INIT ───────────────────────────────────────────────────
-const SEED_VER=5;
+const SEED_VER=6;
 
 function processRecurringIncomes(){
   const today=new Date();
   const day=today.getDate();
-  const mkey=mk(today.getMonth(),today.getFullYear());
+  const y=today.getFullYear();
+  const m=today.getMonth();
+  // Chave única POR DIA — evita reprocessar no mesmo dia, mas permite dias diferentes do mês
+  const dayKey=`${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 
-  // Marca que processou hoje
-  const lastProcessed=localStorage.getItem('fp_rec_proc');
-  if(lastProcessed===mkey) return; // Já processou hoje
+  // Verificar quais receitas fixas já foram processadas hoje (array de incIds + dayKey)
+  let processed;
+  try{ processed=JSON.parse(localStorage.getItem('fp_rec_proc_v2')||'{}'); }catch(e){ processed={}; }
 
+  let added=0;
   S.recurringIncomes.forEach(inc=>{
-    if(inc.day===day){
-      // Adiciona a transação
-      S.txns.push({
-        id:uid(),
-        type:'income',
-        desc:inc.desc,
-        value:inc.value,
-        category:inc.category,
-        date:`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
-        payment:'pix',
-        obs:inc.obs+' (automático)',
-        isRecurring:true
-      });
-    }
+    if(inc.day!==day) return;                    // não é hoje
+    if(processed[inc.id]===dayKey) return;       // já processado hoje
+    S.txns.push({
+      id:uid(),
+      type:'income',
+      desc:inc.desc,
+      value:inc.value,
+      category:inc.category,
+      date:dayKey,
+      payment:'pix',
+      obs:(inc.obs?inc.obs+' · ':'')+'Automático',
+      isRecurring:true,
+      recurringId:inc.id
+    });
+    processed[inc.id]=dayKey;
+    added++;
   });
 
-  if(S.recurringIncomes.some(i=>i.day===day)){
+  if(added>0){
     persist();
-    localStorage.setItem('fp_rec_proc',mkey);
-    toast(`✅ Receitas fixas processadas!`);
+    localStorage.setItem('fp_rec_proc_v2',JSON.stringify(processed));
+    toast(`💰 ${added} receita(s) fixa(s) adicionada(s) automaticamente!`);
   }
 }
 
