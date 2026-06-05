@@ -428,20 +428,40 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         </div>
         <div id="inc-form" style="display:none">
           <div class="fr">
-            <div class="fg"><label>Descrição *</label><input type="text" id="i-desc" placeholder="Ex: Salário de junho"></div>
+            <div class="fg"><label>Descrição *</label><input type="text" id="i-desc" placeholder="Ex: Salário mensal"></div>
             <div class="fg"><label>Valor (R$) *</label><input type="number" id="i-val" placeholder="0,00" step="0.01" inputmode="decimal"></div>
           </div>
           <div class="fr">
-            <div class="fg"><label>Categoria</label>
+            <div class="fg"><label>Tipo de Receita *</label>
               <select id="i-cat">
-                <option value="Salário">💰 Salário</option><option value="Freelance">💻 Freelance</option>
-                <option value="Investimentos">📈 Rend. Investimentos</option><option value="Outros">🎁 Outros</option>
+                <option value="Salário">💰 Salário</option>
+                <option value="Bônus">🎁 Bônus</option>
+                <option value="Hora Extra">⏰ Hora Extra</option>
+                <option value="Freelance">💻 Freelance</option>
+                <option value="Rend. Investimentos">📈 Rend. Investimentos</option>
+                <option value="Outros">🌟 Outros</option>
               </select>
             </div>
             <div class="fg"><label>Data *</label><input type="date" id="i-date"></div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;margin-bottom:12px">
+            <input type="checkbox" id="i-fixed" onchange="updIncFixed()" style="width:18px;height:18px;cursor:pointer">
+            <label style="flex:1;margin:0;cursor:pointer" onclick="document.getElementById('i-fixed').click()">📅 <strong>Receita Fixa</strong> — Recebe todo mês automaticamente?</label>
+          </div>
+          <!-- Campos de receita fixa -->
+          <div id="inc-fixed-fields" style="display:none;padding:12px;background:var(--card2);border-radius:8px;margin-bottom:12px">
+            <div class="fg"><label>Dia do Recebimento (1-31) *</label>
+              <input type="number" id="i-fixed-day" min="1" max="31" placeholder="Ex: 5" inputmode="numeric">
+            </div>
+            <div style="font-size:.78rem;color:var(--text2);margin-top:6px">
+              💡 A receita será adicionada automaticamente no dia especificado cada mês
+            </div>
+          </div>
           <div class="fg"><label>Observação</label><textarea id="i-obs" rows="2" placeholder="Opcional..."></textarea></div>
-          <button class="btn btn-p" onclick="saveInc()">💾 Salvar Receita</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-p" style="flex:1" onclick="saveInc()">💾 Salvar Receita</button>
+            <button class="btn btn-sm btn-s" onclick="openIncMo()">📋 Ver Fixas</button>
+          </div>
         </div>
 
         <!-- FORM: INVESTIMENTO -->
@@ -751,6 +771,18 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="mdf">
       <button class="btn btn-s" onclick="closeMo('mo-bill')">Cancelar</button>
       <button class="btn btn-p" style="width:auto;flex:1" onclick="saveBill()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Recurring Incomes -->
+<div class="mo" id="mo-rec-inc">
+  <div class="md" style="max-width:600px">
+    <div class="md-handle"></div>
+    <h2>Receitas Fixas 📅</h2>
+    <div id="rec-inc-list" style="max-height:40vh;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border);border-radius:10px;padding:0"></div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-rec-inc')">Fechar</button>
     </div>
   </div>
 </div>
@@ -1100,6 +1132,7 @@ function persist(){
   localStorage.setItem('fp_goals',JSON.stringify(S.goals));
   localStorage.setItem('fp_debts',JSON.stringify(S.debts));
   localStorage.setItem('fp_inv_types',JSON.stringify(S.investmentTypes));
+  localStorage.setItem('fp_rec_inc',JSON.stringify(S.recurringIncomes));
 }
 function hydrate(){
   const get=k=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}};
@@ -1107,6 +1140,7 @@ function hydrate(){
   S.cats=get('fp_cat')||[...DEF_CATS];S.budgets=get('fp_bud')||{};
   S.investments=get('fp_inv')||[];S.goals=get('fp_goals')||[];
   S.debts=get('fp_debts')||[];S.investmentTypes=get('fp_inv_types')||[];
+  S.recurringIncomes=get('fp_rec_inc')||[];
 }
 
 // ── DADOS INICIAIS — 1 exemplo por seção ───────────────────
@@ -1345,11 +1379,15 @@ function rendDash(){
   }).join('');
   document.getElementById('dash-budgets').innerHTML=bHtml?`<div class="card" style="margin-bottom:14px"><div class="stl" style="margin-bottom:12px">📊 Orçamento por Categoria</div>${bHtml}</div>`:'';
 
-  // Alerts + goals
+  // Alerts + goals + recurring incomes
   const today=new Date();
   const billAlerts=S.bills.filter(b=>{if((b.paid||[]).includes(mk(m,y)))return false;const d=b.dueDay-today.getDate();return d>=0&&d<=5;}).map(b=>{const d=b.dueDay-today.getDate();return`<div class="alert ${d===0?'ae':'aw'}">${d===0?'🚨':'⚠️'}<strong>${b.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'} — ${fm(b.value)}</div>`;}).join('');
   const goalAlerts=S.goals.filter(g=>{const d=daysLeft(g.deadline);return d!==null&&d>=0&&d<=30&&g.currentAmount<g.targetAmount;}).map(g=>{const d=daysLeft(g.deadline);return`<div class="alert aw">🎯 Meta <strong>${g.name}</strong> vence ${d===0?'HOJE':'em '+d+' dia(s)'}! ${Math.round(g.currentAmount/g.targetAmount*100)}% concluída.</div>`;}).join('');
-  document.getElementById('dash-alerts').innerHTML=billAlerts+goalAlerts;
+
+  // Receitas fixas próximas
+  const incAlerts=S.recurringIncomes.filter(inc=>{const d=inc.day-today.getDate();return d>=0&&d<=5;}).map(inc=>{const d=inc.day-today.getDate();const totalVal=S.recurringIncomes.filter(i=>i.day===inc.day).reduce((s,i)=>s+Number(i.value),0);return`<div class="alert ag">${d===0?'💰':'📅'}<strong>${d===0?'Receitas chegando HOJE':'Receitas em '+d+' dia(s)'}</strong> — ${fm(totalVal)}</div>`;}).join('');
+
+  document.getElementById('dash-alerts').innerHTML=billAlerts+goalAlerts+incAlerts;
 
   // IA Analysis
   rendAiAnalysis(m,y);
@@ -1615,17 +1653,77 @@ function saveExp(){
     toast('Despesa registrada! 💸');
   }
 }
+function updIncFixed(){
+  const fixed=document.getElementById('i-fixed').checked;
+  document.getElementById('inc-fixed-fields').style.display=fixed?'block':'none';
+}
+
+function openIncMo(){
+  rendRecIncList();
+  openMo('mo-rec-inc');
+}
+
+function rendRecIncList(){
+  if(!S.recurringIncomes.length){
+    document.getElementById('rec-inc-list').innerHTML=`<div style="padding:20px;text-align:center;color:var(--text2);font-size:.85rem">Nenhuma receita fixa cadastrada</div>`;
+    return;
+  }
+  document.getElementById('rec-inc-list').innerHTML=S.recurringIncomes.map(inc=>{
+    const nextDate=new Date();nextDate.setDate(inc.day);
+    const isToday=nextDate.getDate()===new Date().getDate();
+    const isPast=nextDate<new Date();
+    return`<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);justify-content:space-between">
+      <div style="flex:1">
+        <div style="font-weight:500;font-size:.88rem">${inc.desc}</div>
+        <div style="font-size:.72rem;color:var(--text2)">📅 Dia ${inc.day} · ${inc.category} · ${fm(inc.value)}</div>
+        ${isToday?`<div style="font-size:.7rem;color:var(--green)">✅ Recebimento hoje</div>`:''}
+      </div>
+      <button class="btn btn-d btn-sm" onclick="delRecInc('${inc.id}')" style="padding:5px 10px">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
 function saveInc(){
   const desc=document.getElementById('i-desc').value.trim();
   const val=parseFloat(document.getElementById('i-val').value);
   const cat=document.getElementById('i-cat').value;
   const date=document.getElementById('i-date').value;
   const obs=document.getElementById('i-obs').value.trim();
+  const isFixed=document.getElementById('i-fixed').checked;
+  const fixedDay=isFixed?parseInt(document.getElementById('i-fixed-day').value):null;
+
   if(!desc||!val||!date){toast('Preencha os campos obrigatórios','error');return}
   if(val<=0){toast('Valor deve ser positivo','error');return}
-  S.txns.push({id:uid(),type:'income',desc,value:val,category:cat,date,payment:'pix',obs});persist();
-  document.getElementById('i-desc').value='';document.getElementById('i-val').value='';document.getElementById('i-obs').value='';
-  toast('Receita registrada! 💰');
+
+  if(isFixed&&(!fixedDay||fixedDay<1||fixedDay>31)){
+    toast('Dia do recebimento deve ser entre 1 e 31','error');return;
+  }
+
+  // Se for receita fixa, adiciona a S.recurringIncomes
+  if(isFixed){
+    S.recurringIncomes.push({id:uid(),desc,value:val,category:cat,day:fixedDay,obs});
+    persist();
+    document.getElementById('i-desc').value='';document.getElementById('i-val').value='';
+    document.getElementById('i-obs').value='';document.getElementById('i-fixed').checked=false;
+    document.getElementById('i-fixed-day').value='';updIncFixed();
+    toast(`Receita fixa "${desc}" cadastrada! Será adicionada todo dia ${fixedDay}. 📅`);
+  } else {
+    // Receita comum
+    S.txns.push({id:uid(),type:'income',desc,value:val,category:cat,date,payment:'pix',obs});
+    persist();
+    document.getElementById('i-desc').value='';document.getElementById('i-val').value='';
+    document.getElementById('i-obs').value='';
+    toast('Receita registrada! 💰');
+  }
+}
+
+function delRecInc(id){
+  if(!confirm('Excluir receita fixa?'))return;
+  const inc=S.recurringIncomes.find(i=>i.id===id);
+  S.recurringIncomes=S.recurringIncomes.filter(i=>i.id!==id);
+  persist();
+  rendRecIncList();
+  toast(`${inc.desc} removida`);
 }
 
 // ── EXTRATO ────────────────────────────────────────────────
@@ -2970,6 +3068,39 @@ function importData(input){
 // ── INIT ───────────────────────────────────────────────────
 const SEED_VER=5;
 
+function processRecurringIncomes(){
+  const today=new Date();
+  const day=today.getDate();
+  const mkey=mk(today.getMonth(),today.getFullYear());
+
+  // Marca que processou hoje
+  const lastProcessed=localStorage.getItem('fp_rec_proc');
+  if(lastProcessed===mkey) return; // Já processou hoje
+
+  S.recurringIncomes.forEach(inc=>{
+    if(inc.day===day){
+      // Adiciona a transação
+      S.txns.push({
+        id:uid(),
+        type:'income',
+        desc:inc.desc,
+        value:inc.value,
+        category:inc.category,
+        date:`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`,
+        payment:'pix',
+        obs:inc.obs+' (automático)',
+        isRecurring:true
+      });
+    }
+  });
+
+  if(S.recurringIncomes.some(i=>i.day===day)){
+    persist();
+    localStorage.setItem('fp_rec_proc',mkey);
+    toast(`✅ Receitas fixas processadas!`);
+  }
+}
+
 function init(){
   const sv=parseInt(localStorage.getItem('fp_sv')||'0');
   if(sv<SEED_VER){
@@ -2985,6 +3116,8 @@ function init(){
   // restaura a última seção visitada (persiste entre reloads)
   const lastSec=localStorage.getItem('fp_nav')||'dashboard';
   nav(lastSec);
+  // Processa receitas fixas
+  processRecurringIncomes();
 }
 init();
 </script>
