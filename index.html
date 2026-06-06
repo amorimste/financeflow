@@ -636,6 +636,32 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
 </div>
 
+<!-- MODAL: Move Transaction to Fatura -->
+<div class="mo" id="mo-move-txn">
+  <div class="md" style="max-width:440px">
+    <div class="md-handle"></div>
+    <h2>↔ Mover para outra Fatura</h2>
+    <input type="hidden" id="mv-txn-id">
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div style="font-size:.72rem;color:var(--text2);margin-bottom:3px">Lançamento</div>
+      <div style="font-weight:600;font-size:.95rem" id="mv-txn-desc">—</div>
+      <div style="font-size:.85rem;color:var(--red);font-weight:700;margin-top:4px" id="mv-txn-val">—</div>
+      <div style="font-size:.72rem;color:var(--text2);margin-top:4px">Fatura atual: <strong id="mv-txn-from">—</strong></div>
+    </div>
+    <div class="fg">
+      <label>Mover para a fatura de:</label>
+      <select id="mv-period" onchange="updMvPreview()">
+        <option value="">— Selecione a fatura destino —</option>
+      </select>
+    </div>
+    <div id="mv-preview" style="display:none;padding:9px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);border-radius:8px;font-size:.82rem;color:var(--green);margin-top:8px"></div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-move-txn')">Cancelar</button>
+      <button class="btn btn-p" style="flex:1" onclick="confirmMoveTxn()">↔ Mover Lançamento</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Card Detail -->
 <div class="mo" id="mo-card-detail">
   <div class="md" style="max-width:660px;padding:0;overflow:hidden">
@@ -657,9 +683,26 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div class="fg" style="margin-bottom:0"><label>Descrição *</label><input type="text" id="cdl-desc" placeholder="Ex: Restaurante..."></div>
         <div class="fg" style="margin-bottom:0"><label>Valor (R$) *</label><input type="number" id="cdl-val" step="0.01" inputmode="decimal" placeholder="0,00"></div>
       </div>
-      <div class="fr" style="margin-bottom:10px">
+      <div class="fr" style="margin-bottom:8px">
         <div class="fg" style="margin-bottom:0"><label>Categoria</label><select id="cdl-cat"></select></div>
-        <div class="fg" style="margin-bottom:0"><label>Data</label><input type="date" id="cdl-date"></div>
+        <div class="fg" style="margin-bottom:0">
+          <label>Lançar na fatura de *</label>
+          <select id="cdl-fatura" onchange="updCdlFatura()"></select>
+        </div>
+      </div>
+      <div id="cdl-fatura-info" style="display:none;padding:7px 10px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:7px;font-size:.78rem;color:var(--blue);margin-bottom:8px"></div>
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg" style="margin-bottom:0"><label>Data do gasto</label><input type="date" id="cdl-date" onchange="updCdlFaturaFromDate()"></div>
+        <div class="fg" style="margin-bottom:0"><label>Parcelas</label>
+          <select id="cdl-inst">
+            <option value="1">À vista</option>
+            <option value="2">2×</option><option value="3">3×</option>
+            <option value="4">4×</option><option value="6">6×</option>
+            <option value="9">9×</option><option value="10">10×</option>
+            <option value="12">12×</option><option value="18">18×</option>
+            <option value="24">24×</option>
+          </select>
+        </div>
       </div>
       <div style="display:flex;gap:7px">
         <button class="btn btn-p btn-sm" style="flex:1" onclick="saveCdlExpense()">✅ Salvar Lançamento</button>
@@ -2552,6 +2595,7 @@ function rendCdlList(card, periods, creditTxns){
           oninput="document.getElementById('cdl-save-${t.id}').style.display='inline-block'"
           onfocus="this.select()">
         <button class="cdl-save-btn" id="cdl-save-${t.id}" onclick="saveCdlVal('${t.id}')">✓</button>
+        <button class="btn btn-s btn-sm" onclick="openMoveTxn('${t.id}')" style="padding:4px 7px;font-size:.75rem" title="Mover para outra fatura">↔</button>
         <button class="btn btn-d btn-sm" onclick="delCdlTxn('${t.id}')" style="padding:4px 7px;font-size:.75rem">🗑️</button>
       </div>
     </div>`;
@@ -2583,15 +2627,77 @@ function delCdlTxn(txnId){
   toast('Lançamento excluído');
 }
 
+// Gera lista de períodos disponíveis (passados + atual + próximo)
+function getCdlPeriodOptions(card, count=8){
+  const now=new Date();
+  const options=[];
+  for(let i=count-2;i>=-1;i--){
+    let m=now.getMonth()-i, y=now.getFullYear();
+    while(m<0){m+=12;y--}
+    while(m>11){m-=12;y++}
+    const key=`${y}-${String(m+1).padStart(2,'0')}`;
+    options.push({key, label:`${MN[m]} / ${y}`});
+  }
+  return options.reverse(); // mais recente primeiro
+}
+
+// Dado um billMonth YYYY-MM, retorna uma data que cai dentro desse período
+// Regra: dia 1 do mês sempre está dentro da fatura daquele mês (day 1 <= qualquer closeDay)
+function dateForBillMonth(billMonth){
+  return `${billMonth}-01`;
+}
+
 function toggleCdlAdd(show){
   document.getElementById('cdl-add-wrap').style.display=show?'block':'none';
   if(show){
+    const card=getCard(cdlCardId);if(!card)return;
     document.getElementById('cdl-cat').innerHTML=S.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
-    document.getElementById('cdl-date').value=new Date().toISOString().split('T')[0];
+    // Popula selector de faturas
+    const options=getCdlPeriodOptions(card);
+    const sel=document.getElementById('cdl-fatura');
+    sel.innerHTML=options.map(o=>`<option value="${o.key}"${o.key===cdlPeriod?' selected':''}>${o.label}</option>`).join('');
+    // Define data inicial compatível com a fatura selecionada
+    document.getElementById('cdl-date').value=dateForBillMonth(cdlPeriod);
     document.getElementById('cdl-desc').value='';
     document.getElementById('cdl-val').value='';
+    document.getElementById('cdl-inst').value='1';
+    updCdlFatura();
     setTimeout(()=>document.getElementById('cdl-desc').focus(),80);
+  } else {
+    document.getElementById('cdl-fatura-info').style.display='none';
   }
+}
+
+function updCdlFatura(){
+  const card=getCard(cdlCardId);if(!card)return;
+  const fatura=document.getElementById('cdl-fatura').value;
+  if(!fatura)return;
+  // Ajusta a data para cair dentro da fatura escolhida
+  const newDate=dateForBillMonth(fatura);
+  document.getElementById('cdl-date').value=newDate;
+  const[y,m]=fatura.split('-');
+  const closeFormatted=`${String(card.closeDay).padStart(2,'0')}/${m}/${y}`;
+  const info=document.getElementById('cdl-fatura-info');
+  info.style.display='block';
+  info.innerHTML=`📅 Vai para a <strong>fatura de ${MN[parseInt(m)-1]} / ${y}</strong> · fecha dia <strong>${closeFormatted}</strong>`;
+}
+
+function updCdlFaturaFromDate(){
+  const card=getCard(cdlCardId);if(!card)return;
+  const dateVal=document.getElementById('cdl-date').value;if(!dateVal)return;
+  // Descobre em qual fatura a data cai e seleciona o período
+  const fakeTxn={date:dateVal};
+  const bm=getBillingMonth(fakeTxn,card);
+  const sel=document.getElementById('cdl-fatura');
+  if([...sel.options].some(o=>o.value===bm)) sel.value=bm;
+  else{
+    // Adiciona a opção se não existir
+    const[y,m]=bm.split('-');
+    const opt=document.createElement('option');
+    opt.value=bm;opt.textContent=`${MN[parseInt(m)-1]} / ${y}`;
+    sel.insertBefore(opt,sel.firstChild);sel.value=bm;
+  }
+  updCdlFatura();
 }
 
 function saveCdlExpense(){
@@ -2599,24 +2705,100 @@ function saveCdlExpense(){
   const val=parseFloat(document.getElementById('cdl-val').value);
   const cat=document.getElementById('cdl-cat').value;
   const date=document.getElementById('cdl-date').value;
+  const instStr=document.getElementById('cdl-inst').value;
+  const inst=parseInt(instStr)||1;
   if(!desc||!val||!date){toast('Preencha descrição, valor e data','error');return}
-  S.txns.push({id:uid(),type:'expense',desc,value:val,category:cat,date,payment:'credit',cardId:cdlCardId,obs:''});
+
+  if(inst>1){
+    // Parcelado: cria uma transação por mês
+    const instVal=parseFloat((val/inst).toFixed(2));
+    for(let i=0;i<inst;i++){
+      S.txns.push({id:uid(),type:'expense',desc,value:instVal,category:cat,
+        date:addMonths(date,i),payment:'credit-installment',cardId:cdlCardId,
+        ic:i+1,it:inst,obs:`Parcela ${i+1}/${inst}`});
+    }
+    toast(`${inst} parcelas de ${fm(val/inst)} lançadas! 💳`);
+  } else {
+    S.txns.push({id:uid(),type:'expense',desc,value:val,category:cat,date,payment:'credit',cardId:cdlCardId,obs:''});
+    toast(`Lançado! 💳`);
+  }
+
   persist();
   toggleCdlAdd(false);
   const card=getCard(cdlCardId);if(!card)return;
   const creditTxns=S.txns.filter(t=>t.type==='expense'&&t.cardId===cdlCardId&&['credit','credit-installment'].includes(t.payment));
   const billMonthSet=new Set([...creditTxns.map(t=>getBillingMonth(t,card)),getCurrentFatura(card).billMonth]);
   const periods=[...billMonthSet].sort().reverse().slice(0,6);
-  // Detecta em qual período o novo lançamento caiu
-  const newTxn=S.txns[S.txns.length-1];
-  cdlPeriod=getBillingMonth(newTxn,card);
+  const targetFatura=document.getElementById('cdl-fatura').value||cdlPeriod;
+  cdlPeriod=targetFatura;
   document.getElementById('cdl-tabs').innerHTML=periods.map(p=>{
     const[y,m]=p.split('-');
     return`<button class="cdl-tab${p===cdlPeriod?' active':''}" onclick="setCdlPeriod('${p}')">${MN[parseInt(m)-1].slice(0,3)}/${y}</button>`;
   }).join('');
   rendCdlList(card,periods,creditTxns);
   rendCards();
-  toast(`Lançado na fatura de ${formatPeriodLabel(cdlPeriod)}! 💳`);
+}
+
+// ── MOVER LANÇAMENTO ENTRE FATURAS ─────────────────────────
+function openMoveTxn(txnId){
+  const t=S.txns.find(t=>t.id===txnId);if(!t)return;
+  const card=getCard(cdlCardId);if(!card)return;
+  const currentBm=getBillingMonth(t,card);
+
+  document.getElementById('mv-txn-id').value=txnId;
+  document.getElementById('mv-txn-desc').textContent=t.desc+(t.it>1?` (${t.ic}/${t.it})`:'');
+  document.getElementById('mv-txn-val').textContent=fm(t.value);
+  document.getElementById('mv-txn-from').textContent=formatPeriodLabel(currentBm);
+  document.getElementById('mv-preview').style.display='none';
+
+  // Popula opções de fatura destino (excluindo a atual)
+  const options=getCdlPeriodOptions(card,12);
+  document.getElementById('mv-period').innerHTML=
+    `<option value="">— Selecione a fatura destino —</option>`+
+    options.filter(o=>o.key!==currentBm).map(o=>`<option value="${o.key}">${o.label}</option>`).join('');
+
+  closeMo('mo-card-detail'); // fecha temporariamente o detail para não sobrepor
+  openMo('mo-move-txn');
+}
+
+function updMvPreview(){
+  const period=document.getElementById('mv-period').value;
+  const prev=document.getElementById('mv-preview');
+  if(!period){prev.style.display='none';return}
+  const[y,m]=period.split('-');
+  const card=getCard(cdlCardId);
+  prev.style.display='block';
+  prev.innerHTML=`✅ Lançamento será movido para <strong>Fatura de ${MN[parseInt(m)-1]} / ${y}</strong>${card?` (fecha dia ${card.closeDay}/${m}/${y})`:''}`;
+}
+
+function confirmMoveTxn(){
+  const txnId=document.getElementById('mv-txn-id').value;
+  const targetPeriod=document.getElementById('mv-period').value;
+  if(!txnId||!targetPeriod){toast('Selecione a fatura destino','error');return}
+
+  const t=S.txns.find(t=>t.id===txnId);if(!t)return;
+  const card=getCard(cdlCardId);if(!card)return;
+
+  // Para mover: altera a data para cair dentro da fatura destino (dia 1 do mês)
+  const newDate=dateForBillMonth(targetPeriod);
+  t.date=newDate;
+
+  persist();
+  closeMo('mo-move-txn');
+  // Reabre o detalhe do cartão na fatura de origem
+  const creditTxns=S.txns.filter(t=>t.type==='expense'&&t.cardId===cdlCardId&&['credit','credit-installment'].includes(t.payment));
+  const billMonthSet=new Set([...creditTxns.map(t=>getBillingMonth(t,card)),getCurrentFatura(card).billMonth]);
+  const periods=[...billMonthSet].sort().reverse().slice(0,6);
+  document.getElementById('cdl-tabs').innerHTML=periods.map(p=>{
+    const[y,m]=p.split('-');
+    return`<button class="cdl-tab${p===cdlPeriod?' active':''}" onclick="setCdlPeriod('${p}')">${MN[parseInt(m)-1].slice(0,3)}/${y}</button>`;
+  }).join('');
+  rendCdlList(card,periods,creditTxns);
+  rendCards();
+  openMo('mo-card-detail');
+
+  const[y,m]=targetPeriod.split('-');
+  toast(`Lançamento movido para fatura de ${MN[parseInt(m)-1]} / ${y}! ✅`);
 }
 
 function ajustarFatura(){
