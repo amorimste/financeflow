@@ -1359,17 +1359,64 @@ function rendDash(){
   const totCreditExp=creditExps.reduce((s,t)=>s+Number(t.value),0);
   const totInc=incs.reduce((s,t)=>s+Number(t.value),0);
   const bal=totInc-totRealExp;
-  const totBud=Object.values(S.budgets).reduce((s,v)=>s+v,0);
-  const budPct=totBud>0?Math.round(totRealExp/totBud*100):0;
   const totInvested=S.investments.reduce((s,i)=>s+Number(i.currentValue),0);
-  // Total crédito comprometido em todos os cartões (parcelas futuras não pagas)
-  const totalCreditUsed=S.cards.reduce((s,c)=>s+getCardLimitUsed(c),0);
+
+  // ── CARD 2: Débitos do mês (cartões + contas fixas pendentes) ──
+  const mkey=mk(m,y);
+  // Faturas abertas de cartões neste mês (billMonth = mês atual)
+  const faturasMes=S.cards.reduce((s,card)=>{
+    const creditTxns=S.txns.filter(t=>t.type==='expense'&&t.cardId===card.id&&['credit','credit-installment'].includes(t.payment));
+    const faturaVal=creditTxns.filter(t=>getBillingMonth(t,card)===mkey).reduce((a,t)=>a+Number(t.value),0);
+    const isPaid=(card.paidBills||[]).includes(mkey);
+    return s+(isPaid?0:faturaVal);
+  },0);
+  // Contas fixas pendentes do mês
+  const contasPendentes=S.bills.filter(b=>!(b.paid||[]).includes(mkey)).reduce((s,b)=>s+Number(b.value),0);
+  const totalDebitos=faturasMes+contasPendentes;
+  const nFaturas=S.cards.filter(c=>{
+    const ct=S.txns.filter(t=>t.type==='expense'&&t.cardId===c.id&&['credit','credit-installment'].includes(t.payment));
+    return ct.some(t=>getBillingMonth(t,c)===mkey)&&!(c.paidBills||[]).includes(mkey);
+  }).length;
+  const nContas=S.bills.filter(b=>!(b.paid||[]).includes(mkey)).length;
+
+  // ── CARD 4: Meta de gastos do mês ──
+  const totBud=Object.values(S.budgets).reduce((s,v)=>s+Number(v),0);
+  const totExp=exps.reduce((s,t)=>s+Number(t.value),0);
+  const livreOrc=totBud-totExp;
+  const budPct=totBud>0?Math.min(totExp/totBud*100,100):0;
+  const orcColor=livreOrc<0?'rd':budPct>=90?'or':budPct>=70?'yw':'gr';
+  const orcIcon=livreOrc<0?'🚨':budPct>=90?'⚠️':budPct>=70?'📊':'✅';
 
   document.getElementById('sum-cards').innerHTML=`
-    <div class="sc gr"><div class="lbl">Receitas</div><div class="val gr">${fm(totInc)}</div><div class="sub">${incs.length} lançamento(s)</div></div>
-    <div class="sc rd"><div class="lbl">Gastos (Déb/PIX)</div><div class="val rd">${fm(totRealExp)}</div><div class="sub">💳 Crédito: ${fm(totCreditExp)}</div></div>
-    <div class="sc ${bal>=0?'gr':'rd'}"><div class="lbl">Saldo Bancário</div><div class="val ${bal>=0?'gr':'rd'}">${fm(bal)}</div><div class="sub">${bal>=0?'✅ Não inclui crédito':'⚠️ Negativo'}</div></div>
-    <div class="sc bl"><div class="lbl">Em Investimentos</div><div class="val bl">${fm(totInvested)}</div><div class="sub">${S.investments.length} ativos</div></div>`;
+    <div class="sc gr">
+      <div class="lbl">💰 Receitas do Mês</div>
+      <div class="val gr">${fm(totInc)}</div>
+      <div class="sub">${incs.length} recebimento(s)</div>
+    </div>
+    <div class="sc rd">
+      <div class="lbl">📋 A Pagar este Mês</div>
+      <div class="val rd">${fm(totalDebitos)}</div>
+      <div class="sub" style="display:flex;flex-direction:column;gap:1px">
+        <span>💳 ${nFaturas} fatura(s): ${fm(faturasMes)}</span>
+        <span>🔁 ${nContas} conta(s) fixa(s): ${fm(contasPendentes)}</span>
+      </div>
+    </div>
+    <div class="sc ${bal>=0?'gr':'rd'}">
+      <div class="lbl">🏦 Saldo Bancário</div>
+      <div class="val ${bal>=0?'gr':'rd'}">${fm(bal)}</div>
+      <div class="sub">${bal>=0?'Déb/PIX descontados':'⚠️ Saldo negativo'}</div>
+    </div>
+    <div class="sc ${orcColor}">
+      <div class="lbl">🎯 Meta de Gastos</div>
+      ${totBud>0?`
+        <div class="val ${orcColor}">${livreOrc>=0?fm(livreOrc):'−'+fm(Math.abs(livreOrc))}</div>
+        <div class="sub">${orcIcon} ${livreOrc>=0?'livre de':'acima em'} ${totBud>0?Math.abs(Math.round(100-budPct))+'%':''}</div>
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden">
+          <div style="height:100%;width:${budPct}%;background:${livreOrc<0?'var(--red)':budPct>=90?'var(--orange)':'var(--green)'};border-radius:2px;transition:width .5s"></div>
+        </div>
+      `:`<div class="val" style="font-size:1rem;color:var(--text2)">—</div>
+        <div class="sub"><a onclick="nav('orcamento')" style="color:var(--blue);cursor:pointer;text-decoration:underline">Configurar orçamento →</a></div>`}
+    </div>`;
 
   // Pie — usa TODOS os gastos (real + crédito) para mostrar onde o dinheiro foi
   const totExp=exps.reduce((s,t)=>s+Number(t.value),0); // total para % no tooltip
