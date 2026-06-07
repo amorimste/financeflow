@@ -1419,7 +1419,7 @@ function rendDash(){
     </div>`;
 
   // Pie — usa TODOS os gastos (real + crédito) para mostrar onde o dinheiro foi
-  const totExp=exps.reduce((s,t)=>s+Number(t.value),0); // total para % no tooltip
+  // totExp já declarado acima para cálculo da meta de gastos
   const catTot={};
   exps.forEach(t=>{catTot[t.category]=(catTot[t.category]||0)+Number(t.value)});
   const ks=Object.keys(catTot);
