@@ -95,6 +95,8 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 .tam{font-weight:700;font-size:.92rem;white-space:nowrap}
 .tam.expense{color:var(--red)}.tam.income{color:var(--green)}
 .tact{display:flex;gap:5px;flex-shrink:0}
+.tc2-mob{display:none}
+.tc2-desk{display:block}
 
 /* ── ALERTS ── */
 .alert{padding:10px 14px;border-radius:10px;margin-bottom:9px;font-size:.83rem;display:flex;align-items:center;gap:9px}
@@ -233,6 +235,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .inv-ret{font-size:.74rem;margin-top:2px}
 .inv-ret.pos{color:var(--green)}.inv-ret.neg{color:var(--red)}
 
+/* ── EXTRATO FILTERS ── */
+.ext-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.ext-filters input,.ext-filters select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit;-webkit-appearance:none;min-height:38px}
+.ext-filters input:focus,.ext-filters select:focus{border-color:var(--green)}
+.ext-f-full{flex:1;min-width:140px}
+
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:768px){
   /* sidebar drawer */
@@ -247,31 +255,40 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   .ph{padding:16px 14px 0}
   .ph h1{font-size:1.15rem}
   .ph p{font-size:.78rem}
-  .ca{padding:0 14px 20px}
+  .ca{padding:0 12px 20px}
   /* grids */
   .g4{grid-template-columns:repeat(2,1fr);gap:9px}
   .g3{grid-template-columns:1fr;gap:9px}
   .g2{grid-template-columns:1fr;gap:9px}
   .fr{grid-template-columns:1fr;gap:9px}
   /* summary cards */
-  .sc .val{font-size:1.1rem}
-  .sc{padding:14px}
+  .sc .val{font-size:1.05rem}
+  .sc{padding:13px 12px}
+  .sc .lbl{font-size:.68rem}
+  .sc .sub{font-size:.68rem}
   /* charts */
-  .cc{padding:14px}
-  canvas{max-height:200px}
+  .cc{padding:12px}
+  canvas{max-height:190px}
   /* forms — prevent iOS zoom (needs 16px min) */
-  .fg input,.fg select,.fg textarea,.fb input,.fb select{font-size:16px}
+  .fg input,.fg select,.fg textarea,.fb input,.fb select,
+  .ext-filters input,.ext-filters select{font-size:16px}
   /* tabs */
-  .tabs{width:100%;flex-wrap:nowrap}
-  .tab{flex:1;text-align:center;padding:7px 4px;font-size:.78rem}
-  /* filter bar */
+  .tabs{width:100%;flex-wrap:nowrap;overflow-x:auto}
+  .tab{flex:1;text-align:center;padding:7px 4px;font-size:.78rem;white-space:nowrap}
+  /* filter bar legado */
   .fb{flex-direction:column;gap:8px}
   .fb input,.fb select{width:100%}
+  /* extrato filters — grid 2x2 */
+  .ext-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ext-f-full{grid-column:1/-1}
   /* transactions */
-  .ti{padding:9px 10px;gap:8px}
+  .ti{padding:9px 10px;gap:7px;min-height:0}
   .tdate{display:none}
-  .tam{font-size:.85rem}
-  .tact .btn-sm{padding:5px 8px;font-size:.72rem}
+  .tc2-desk{display:none}
+  .tc2-mob{display:block;font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tam{font-size:.84rem;white-space:nowrap}
+  .tact .btn-sm{padding:4px 8px;font-size:.82rem;min-height:32px;min-width:32px}
+  .tic{width:32px;height:32px;font-size:.9rem;flex-shrink:0}
   /* budget */
   .bui .buh{flex-direction:column;align-items:flex-start;gap:3px}
   .bui>div:last-child{flex-wrap:wrap}
@@ -282,37 +299,54 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   /* goal cards */
   .goal-card{padding:14px}
   /* credit card visual */
-  .cv{padding:16px}
+  .cv{padding:14px;min-height:110px}
+  .cv .cv-bottom{flex-wrap:wrap;gap:6px}
   /* modals */
   .mo{align-items:flex-end}
-  .md{border-radius:20px 20px 0 0;max-height:92vh;padding:20px}
+  .md{border-radius:20px 20px 0 0;max-height:92vh;padding:18px 16px}
   .mdf{flex-direction:column}
   .mdf .btn{width:100%}
   .btn-p{font-size:.9rem;padding:12px}
   /* misc */
   .mnav{justify-content:center}
-  .tact{gap:4px}
+  .tact{gap:4px;flex-shrink:0}
   .tc-cont{bottom:76px;right:12px;max-width:calc(100vw - 24px)}
-  .toast{max-width:280px}
-  .cg{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .toast{max-width:270px;font-size:.78rem}
+  .cg{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
   /* specific grids that should stay 2-col on mobile */
   #inv-sum-cards{grid-template-columns:repeat(2,1fr)!important}
   #goal-sum-cards{grid-template-columns:repeat(2,1fr)!important}
   #div-sum-cards{grid-template-columns:repeat(2,1fr)!important}
   #cards-grid{grid-template-columns:1fr!important}
   #goals-grid{grid-template-columns:1fr!important}
+  /* cartões — header buttons stack */
+  #sec-cartoes .ca>div:first-child{flex-direction:column;align-items:stretch}
+  #sec-cartoes .ca>div:first-child .btn{width:100%;justify-content:center}
+  /* contas fixas — g2 already 1col, but section buttons */
+  #sec-contas .ca>div:first-child{flex-direction:column;align-items:stretch}
   /* sidebar footer */
   #sidebar>div:last-child button,#sidebar>div:last-child label{font-size:.78rem;padding:8px 10px}
   /* pdf table scroll on mobile */
-  #pdf-table-wrap{overflow-x:auto}
+  #pdf-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .pdf-tbl{min-width:520px}
+  /* card detail modal tabs scroll */
+  #cdl-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;padding-bottom:2px}
+  /* mnav month nav */
+  .mdisp{font-size:.82rem;min-width:120px}
+  /* ext-sum chips */
+  #ext-sum .chip{font-size:.72rem;padding:4px 9px}
+  /* bottom nav label */
+  .bni{font-size:.58rem}
 }
 @media(max-width:400px){
   .g4{grid-template-columns:1fr}
   #inv-sum-cards{grid-template-columns:1fr!important}
   #goal-sum-cards{grid-template-columns:1fr!important}
   #div-sum-cards{grid-template-columns:1fr!important}
-  .sc .val{font-size:1rem}
+  .sc .val{font-size:.95rem}
+  .sc{padding:11px 10px}
+  .ca{padding:0 10px 16px}
+  .ph{padding:14px 10px 0}
 }
 @media(min-width:769px){
   .mo{align-items:center}
@@ -498,8 +532,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 <div id="sec-extrato" class="sec">
   <div class="ph"><h1>Extrato</h1><p>Histórico de lançamentos</p></div>
   <div class="ca">
-    <div class="fb">
-      <input type="month" id="f-month" onchange="rendExt()">
+    <div class="ext-filters">
+      <input type="month" id="f-month" onchange="rendExt()" class="ext-f-full">
       <select id="f-cat" onchange="rendExt()"><option value="">Todas categorias</option></select>
       <select id="f-pay" onchange="rendExt()">
         <option value="">Todas formas</option><option value="debit">Débito</option><option value="credit">Crédito</option>
@@ -508,7 +542,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <select id="f-type" onchange="rendExt()">
         <option value="">Todos</option><option value="expense">Despesas</option><option value="income">Receitas</option>
       </select>
-      <input type="text" id="f-search" placeholder="🔍 Buscar..." oninput="rendExt()" style="flex:1;min-width:120px">
+      <input type="text" id="f-search" placeholder="🔍 Buscar..." oninput="rendExt()" class="ext-f-full">
     </div>
     <div id="ext-sum" style="margin-bottom:12px"></div>
     <div id="ext-list"></div>
@@ -609,7 +643,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <button class="bni active" data-sec="dashboard" onclick="nav('dashboard')"><span class="bi2">🏠</span>Início</button>
     <button class="bni" data-sec="novo" onclick="nav('novo')"><span class="bi2">➕</span>Lançar</button>
     <button class="bni" data-sec="extrato" onclick="nav('extrato')"><span class="bi2">📋</span>Extrato</button>
-    <button class="bni" data-sec="dividas" onclick="nav('dividas')"><span class="bi2">💸</span>Dívidas</button>
+    <button class="bni" data-sec="cartoes" onclick="nav('cartoes')"><span class="bi2">💳</span>Cartões</button>
     <button class="bni" onclick="toggleSidebar()"><span class="bi2">☰</span>Mais</button>
   </div>
 </nav>
@@ -1925,17 +1959,19 @@ function rendExt(){
 function txnHTML(t){
   const cat=getCat(t.category);const card=t.cardId?getCard(t.cardId):null;
   const inst=t.it>1?` <span style="color:var(--text2);font-size:.7rem">${t.ic}/${t.it}</span>`:'';
+  const payLbl=PAY_LBL[t.payment]||t.payment;
   return`<div class="ti">
     <div class="tic" style="background:${cat.color}22">${cat.icon}</div>
     <div class="tif">
       <div class="td">${t.desc}${inst}</div>
-      <div class="tc2">${fd(t.date)} · ${cat.icon} ${t.category} · ${PAY_LBL[t.payment]||t.payment}${card?' · '+card.name:''}</div>
+      <div class="tc2 tc2-desk">${cat.icon} ${t.category} · ${payLbl}${card?' · '+card.name:''}</div>
+      <div class="tc2 tc2-mob">${fd(t.date)} · ${payLbl}${card?' · '+card.name:''}</div>
     </div>
     <div class="tdate">${fd(t.date)}</div>
     <div class="tam ${t.type}">${t.type==='income'?'+':'-'} ${fm(t.value)}</div>
     <div class="tact">
-      <button class="btn btn-s btn-sm" onclick="editTxn('${t.id}')">✏️</button>
-      <button class="btn btn-d btn-sm" onclick="delTxn('${t.id}')">🗑️</button>
+      <button class="btn btn-s btn-sm txn-edit-btn" onclick="editTxn('${t.id}')">✏️</button>
+      <button class="btn btn-d btn-sm txn-del-btn" onclick="delTxn('${t.id}')">🗑️</button>
     </div>
   </div>`;
 }
