@@ -212,6 +212,37 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .divider{height:1px;background:var(--border);margin:16px 0}
 .badge{padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:600;display:inline-block}
 
+/* ── LISTA DE DESEJOS ── */
+.wish-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.wish-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.wish-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.wish-card.alta::before{background:var(--red)}
+.wish-card.media::before{background:var(--orange)}
+.wish-card.baixa::before{background:var(--blue)}
+.wish-header{display:flex;align-items:flex-start;gap:12px}
+.wish-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.wish-info{flex:1;min-width:0}
+.wish-name{font-weight:700;font-size:1rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wish-value{font-size:1.3rem;font-weight:700;color:var(--purple)}
+.wish-meta{font-size:.72rem;color:var(--text2);margin-top:2px}
+.wish-priority{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-flex;align-items:center;gap:4px}
+.wish-priority.alta{background:rgba(255,77,109,.15);color:var(--red)}
+.wish-priority.media{background:rgba(255,159,67,.15);color:var(--orange)}
+.wish-priority.baixa{background:rgba(59,130,246,.15);color:var(--blue)}
+.wish-ai-box{background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.2);border-radius:10px;padding:12px;display:none}
+.wish-ai-box.show{display:block}
+.wish-ai-title{font-size:.72rem;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wish-ai-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(124,106,247,.1);font-size:.8rem}
+.wish-ai-row:last-child{border-bottom:none}
+.wish-ai-label{color:var(--text2);font-size:.72rem;min-width:90px;flex-shrink:0;padding-top:1px}
+.wish-ai-val{font-weight:500;flex:1}
+.wish-ai-val.good{color:var(--green)}.wish-ai-val.warn{color:var(--orange)}.wish-ai-val.bad{color:var(--red)}
+.wish-actions{display:flex;gap:7px;flex-wrap:wrap}
+.wish-btn-ai{flex:1;background:linear-gradient(135deg,rgba(124,106,247,.2),rgba(59,130,246,.2));border:1px solid rgba(124,106,247,.35);color:var(--purple);border-radius:8px;padding:8px 12px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;min-height:36px}
+.wish-btn-ai:hover{background:linear-gradient(135deg,rgba(124,106,247,.35),rgba(59,130,246,.35))}
+.wish-btn-buy{flex:1;background:rgba(0,200,150,.12);border:1px solid rgba(0,200,150,.3);color:var(--green);border-radius:8px;padding:8px 12px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;min-height:36px}
+.wish-btn-buy:hover{background:rgba(0,200,150,.22)}
+
 /* ── GOAL CARD ── */
 .goal-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:11px;position:relative;overflow:hidden}
 .goal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
@@ -324,6 +355,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   #div-sum-cards{grid-template-columns:repeat(2,1fr)!important}
   #cards-grid{grid-template-columns:1fr!important}
   #goals-grid{grid-template-columns:1fr!important}
+  #wish-list{grid-template-columns:1fr!important}
+  #wish-sum-cards{grid-template-columns:repeat(2,1fr)!important}
+  .wish-card{padding:14px}
+  .wish-ai-label{min-width:80px;font-size:.68rem}
   /* cartões — header buttons stack */
   #sec-cartoes .ca>div:first-child{flex-direction:column;align-items:stretch}
   #sec-cartoes .ca>div:first-child .btn{width:100%;justify-content:center}
@@ -381,6 +416,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="ni" data-sec="cartoes" onclick="nav('cartoes')"><span class="ic">💳</span>Cartões</div>
     <div class="ni" data-sec="contas" onclick="nav('contas')"><span class="ic">🔁</span>Contas Fixas</div>
     <div class="ni" data-sec="dividas" onclick="nav('dividas')"><span class="ic">💸</span>Dívidas</div>
+    <div class="ni" data-sec="desejos" onclick="nav('desejos')"><span class="ic">🛍️</span>Lista de Desejos</div>
     <div class="ni" data-sec="investimentos" onclick="nav('investimentos')"><span class="ic">💹</span>Investimentos</div>
     <div class="ni" data-sec="metas" onclick="nav('metas')"><span class="ic">🎯</span>Metas</div>
     <div class="ni" data-sec="orcamento" onclick="nav('orcamento')"><span class="ic">📊</span>Orçamento</div>
@@ -593,6 +629,27 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
 </div>
 
+<!-- LISTA DE DESEJOS -->
+<div id="sec-desejos" class="sec">
+  <div class="ph"><h1>🛍️ Lista de Desejos</h1><p>O que você quer comprar — com análise inteligente</p></div>
+  <div class="ca">
+    <!-- Summary -->
+    <div class="g4" id="wish-sum-cards" style="margin-bottom:16px"></div>
+    <!-- Header -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;gap:9px;flex-wrap:wrap">
+      <select id="wish-filter-pri" onchange="rendWishlist()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit">
+        <option value="">Todas prioridades</option>
+        <option value="alta">🔴 Alta</option>
+        <option value="media">🟡 Média</option>
+        <option value="baixa">🔵 Baixa</option>
+      </select>
+      <button class="btn btn-s" style="background:rgba(124,106,247,.12);border-color:rgba(124,106,247,.3);color:var(--purple)" onclick="analyzeAllWishes()">🤖 Analisar Todos</button>
+      <button class="btn btn-s" onclick="openWishMo()">+ Adicionar Desejo</button>
+    </div>
+    <div id="wish-list" class="g2"></div>
+  </div>
+</div>
+
 <!-- INVESTIMENTOS -->
 <div id="sec-investimentos" class="sec">
   <div class="ph"><h1>Investimentos</h1><p>Portfólio e poupança</p></div>
@@ -641,6 +698,39 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 
 </main>
+
+<!-- MODAL: Desejo -->
+<div class="mo" id="mo-wish">
+  <div class="md" style="max-width:500px">
+    <div class="md-handle"></div>
+    <h2 id="wish-mo-title">✨ Adicionar Desejo</h2>
+    <input type="hidden" id="wish-id">
+    <div class="fr">
+      <div class="fg"><label>Nome do item *</label><input type="text" id="wish-name" placeholder="Ex: iPhone 16, TV 65&quot;, Viagem..."></div>
+      <div class="fg"><label>Valor (R$) *</label><input type="number" id="wish-value" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Prioridade</label>
+        <select id="wish-priority">
+          <option value="alta">🔴 Alta — Quero em breve</option>
+          <option value="media" selected>🟡 Média — Quando der</option>
+          <option value="baixa">🔵 Baixa — Sonho futuro</option>
+        </select>
+      </div>
+      <div class="fg"><label>Ícone</label>
+        <div class="ep-input-row">
+          <input type="text" id="wish-icon-val" value="🛍️" readonly style="cursor:pointer;max-width:70px;text-align:center;font-size:1.4rem" onclick="openEp('wish-icon-val')">
+          <button class="ep-open-btn" onclick="openEp('wish-icon-val')">😊</button>
+        </div>
+      </div>
+    </div>
+    <div class="fg"><label>Observações</label><input type="text" id="wish-notes" placeholder="Loja, modelo, link..."></div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-wish')">Cancelar</button>
+      <button class="btn btn-p" style="width:auto;flex:1" onclick="saveWish()">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <!-- BOTTOM NAV (mobile) -->
 <nav class="bnav">
@@ -1200,7 +1290,7 @@ const INV_TYPES={poupanca:{label:'Poupança',icon:'🏦',color:'#2ecc71'},rendaf
 const MN=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 // ── STATE ──────────────────────────────────────────────────
-let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],debts:[],investmentTypes:[],recurringIncomes:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
+let S={txns:[],cards:[],bills:[],cats:[],budgets:{},investments:[],goals:[],debts:[],investmentTypes:[],recurringIncomes:[],wishlist:[],cm:new Date().getMonth(),cy:new Date().getFullYear()};
 let cPie=null,cBar=null,cInvPie=null;
 
 // ── PERSISTENCE ────────────────────────────────────────────
@@ -1215,6 +1305,7 @@ function persist(){
   localStorage.setItem('fp_debts',JSON.stringify(S.debts));
   localStorage.setItem('fp_inv_types',JSON.stringify(S.investmentTypes));
   localStorage.setItem('fp_rec_inc',JSON.stringify(S.recurringIncomes));
+  localStorage.setItem('fp_wish',JSON.stringify(S.wishlist));
 }
 function hydrate(){
   const get=k=>{ try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}};
@@ -1223,6 +1314,7 @@ function hydrate(){
   S.investments=get('fp_inv')||[];S.goals=get('fp_goals')||[];
   S.debts=get('fp_debts')||[];S.investmentTypes=get('fp_inv_types')||[];
   S.recurringIncomes=get('fp_rec_inc')||[];
+  S.wishlist=get('fp_wish')||[];
 }
 
 // ── DADOS INICIAIS — 1 exemplo por seção ───────────────────
@@ -1373,6 +1465,7 @@ function nav(sec){
   else if(sec==='dividas') rendDividas();
   else if(sec==='investimentos') rendInv();
   else if(sec==='metas') rendGoals();
+  else if(sec==='desejos') rendWishlist();
   else if(sec==='orcamento') rendBud();
   else if(sec==='categorias') rendCats();
   else if(sec==='novo') initNovo();
@@ -3368,6 +3461,248 @@ function pickEmoji(encoded){
     }
   }
   closeEmojiPicker();
+}
+
+// ── LISTA DE DESEJOS ───────────────────────────────────────
+function rendWishlist(){
+  const pri=document.getElementById('wish-filter-pri').value;
+  let list=[...S.wishlist];
+  if(pri) list=list.filter(w=>w.priority===pri);
+  // Ordenar: alta → media → baixa, depois por valor desc
+  const ord={alta:0,media:1,baixa:2};
+  list.sort((a,b)=>ord[a.priority]-ord[b.priority]||Number(b.value)-Number(a.value));
+
+  // Summary cards
+  const total=S.wishlist.reduce((s,w)=>s+Number(w.value),0);
+  const altas=S.wishlist.filter(w=>w.priority==='alta');
+  const totAlta=altas.reduce((s,w)=>s+Number(w.value),0);
+  // Calcular poupança mensal (receita - despesa do mês atual)
+  const now=new Date();const m=now.getMonth();const y=now.getFullYear();
+  const mkey=mk(m,y);
+  const mInc=S.txns.filter(t=>t.type==='income'&&t.date.startsWith(mkey)).reduce((s,t)=>s+Number(t.value),0);
+  const mExp=S.txns.filter(t=>t.type==='expense'&&t.date.startsWith(mkey)&&REAL_PAYMENTS.includes(t.payment)).reduce((s,t)=>s+Number(t.value),0);
+  const savings=Math.max(0,mInc-mExp);
+  const mesesTotal=savings>0?Math.ceil(total/savings):null;
+
+  document.getElementById('wish-sum-cards').innerHTML=`
+    <div class="sc pu"><div class="lbl">🛍️ Total Desejos</div><div class="val pu">${fm(total)}</div><div class="sub">${S.wishlist.length} item(ns)</div></div>
+    <div class="sc rd"><div class="lbl">🔴 Prioridade Alta</div><div class="val rd">${fm(totAlta)}</div><div class="sub">${altas.length} item(ns)</div></div>
+    <div class="sc gr"><div class="lbl">💰 Poupança Atual/Mês</div><div class="val gr">${fm(savings)}</div><div class="sub">Receita − Despesas reais</div></div>
+    <div class="sc bl"><div class="lbl">📅 Meses p/ Tudo</div><div class="val bl">${mesesTotal?mesesTotal+'m':'—'}</div><div class="sub">${mesesTotal?'guardando '+fm(savings)+'/mês':'Configure suas receitas'}</div></div>`;
+
+  if(!list.length){
+    document.getElementById('wish-list').innerHTML=`<div class="es" style="grid-column:1/-1"><div class="ei">✨</div><p>Nenhum desejo cadastrado ainda.<br><small>Adicione coisas que você quer comprar!</small></p></div>`;
+    return;
+  }
+
+  document.getElementById('wish-list').innerHTML=list.map(w=>wishCardHTML(w)).join('');
+}
+
+function wishCardHTML(w){
+  const priLabel={alta:'🔴 Alta',media:'🟡 Média',baixa:'🔵 Baixa'};
+  const addedDate=w.addedAt?new Date(w.addedAt).toLocaleDateString('pt-BR'):'';
+  return`<div class="wish-card ${w.priority}" id="wc-${w.id}">
+    <div class="wish-header">
+      <div class="wish-icon" style="background:${w.priority==='alta'?'rgba(255,77,109,.15)':w.priority==='media'?'rgba(255,159,67,.15)':'rgba(59,130,246,.15)'}">${w.icon||'🛍️'}</div>
+      <div class="wish-info">
+        <div class="wish-name">${w.name}</div>
+        <div class="wish-value">${fm(w.value)}</div>
+        <div class="wish-meta">${w.notes?w.notes+' · ':''}<span class="wish-priority ${w.priority}">${priLabel[w.priority]}</span>${addedDate?' · '+addedDate:''}</div>
+      </div>
+    </div>
+    <div class="wish-ai-box" id="waib-${w.id}"></div>
+    <div class="wish-actions">
+      <button class="wish-btn-ai" onclick="analyzeWish('${w.id}')">🤖 Analisar Compra</button>
+      <button class="wish-btn-buy" onclick="buyWish('${w.id}')">✅ Comprei!</button>
+      <button class="btn btn-s btn-sm" onclick="openWishMo('${w.id}')">✏️</button>
+      <button class="btn btn-d btn-sm" onclick="delWish('${w.id}')">🗑️</button>
+    </div>
+  </div>`;
+}
+
+function openWishMo(id){
+  document.getElementById('wish-id').value=id||'';
+  if(id){
+    const w=S.wishlist.find(x=>x.id===id);if(!w)return;
+    document.getElementById('wish-mo-title').textContent='✏️ Editar Desejo';
+    document.getElementById('wish-name').value=w.name;
+    document.getElementById('wish-value').value=w.value;
+    document.getElementById('wish-priority').value=w.priority||'media';
+    document.getElementById('wish-icon-val').value=w.icon||'🛍️';
+    document.getElementById('wish-notes').value=w.notes||'';
+  }else{
+    document.getElementById('wish-mo-title').textContent='✨ Adicionar Desejo';
+    document.getElementById('wish-name').value='';
+    document.getElementById('wish-value').value='';
+    document.getElementById('wish-priority').value='media';
+    document.getElementById('wish-icon-val').value='🛍️';
+    document.getElementById('wish-notes').value='';
+  }
+  openMo('mo-wish');
+}
+
+function saveWish(){
+  const name=document.getElementById('wish-name').value.trim();
+  const value=parseFloat(document.getElementById('wish-value').value);
+  if(!name||!value||value<=0){toast('Preencha nome e valor','error');return}
+  const id=document.getElementById('wish-id').value;
+  const obj={
+    id:id||uid(),name,value,
+    priority:document.getElementById('wish-priority').value,
+    icon:document.getElementById('wish-icon-val').value||'🛍️',
+    notes:document.getElementById('wish-notes').value.trim(),
+    addedAt:id?(S.wishlist.find(w=>w.id===id)||{}).addedAt||new Date().toISOString():new Date().toISOString()
+  };
+  if(id){const i=S.wishlist.findIndex(w=>w.id===id);if(i>=0)S.wishlist[i]=obj;else S.wishlist.push(obj);}
+  else S.wishlist.push(obj);
+  persist();closeMo('mo-wish');rendWishlist();
+  toast(id?'Desejo atualizado! ✏️':'Desejo adicionado! 🛍️');
+}
+
+function delWish(id){
+  const w=S.wishlist.find(x=>x.id===id);if(!w)return;
+  if(!confirm(`Excluir "${w.name}" da lista de desejos?`))return;
+  S.wishlist=S.wishlist.filter(x=>x.id!==id);
+  persist();rendWishlist();toast('Removido da lista');
+}
+
+function buyWish(id){
+  const w=S.wishlist.find(x=>x.id===id);if(!w)return;
+  if(!confirm(`Marcar "${w.name}" como comprado?\n\nO item será removido da lista de desejos.`))return;
+  S.wishlist=S.wishlist.filter(x=>x.id!==id);
+  persist();rendWishlist();
+  toast(`🎉 Parabéns! "${w.name}" comprado!`);
+}
+
+function analyzeAllWishes(){
+  if(!S.wishlist.length){toast('Nenhum desejo para analisar','error');return}
+  S.wishlist.forEach(w=>analyzeWish(w.id,true));
+  toast('🤖 Análise concluída para todos os itens!');
+}
+
+function analyzeWish(id, silent=false){
+  const w=S.wishlist.find(x=>x.id===id);if(!w)return;
+  const box=document.getElementById('waib-'+id);if(!box)return;
+
+  // ── COLETA DE DADOS ──
+  const now=new Date();
+  const m=now.getMonth();const y=now.getFullYear();
+  const mkey=mk(m,y);
+
+  // Renda mensal: txns income do mês + receitas fixas
+  const mInc=S.txns.filter(t=>t.type==='income'&&t.date.startsWith(mkey)).reduce((s,t)=>s+Number(t.value),0);
+  const recInc=S.recurringIncomes.reduce((s,i)=>s+Number(i.value),0);
+  const monthlyIncome=Math.max(mInc,recInc);
+
+  // Gastos reais do mês (débito/pix/cash)
+  const mExp=S.txns.filter(t=>t.type==='expense'&&t.date.startsWith(mkey)&&REAL_PAYMENTS.includes(t.payment)).reduce((s,t)=>s+Number(t.value),0);
+
+  // Saldo bancário atual
+  const allInc=S.txns.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.value),0);
+  const allExp=S.txns.filter(t=>t.type==='expense'&&REAL_PAYMENTS.includes(t.payment)).reduce((s,t)=>s+Number(t.value),0);
+  const saldoAtual=allInc-allExp;
+
+  // Poupança livre mensal
+  const savingsFree=Math.max(0,monthlyIncome-mExp);
+  const val=Number(w.value);
+
+  // ── ANÁLISE 1: MELHOR MOMENTO ──
+  let momento='';let momentoClass='good';
+  if(saldoAtual>=val){
+    momento=`✅ Você pode comprar <strong>agora</strong> — tem ${fm(saldoAtual)} disponível`;
+    momentoClass='good';
+  }else if(savingsFree>0){
+    const meses=Math.ceil((val-Math.max(0,saldoAtual))/savingsFree);
+    if(meses<=1) momento=`🟡 <strong>Este mês</strong> — guardando sua sobra de ${fm(savingsFree)}`;
+    else if(meses<=3) momento=`🟡 Em <strong>${meses} meses</strong> — poupando ${fm(savingsFree)}/mês`;
+    else momento=`⏳ Em <strong>${meses} meses</strong> guardando ${fm(savingsFree)}/mês`;
+    momentoClass=meses<=3?'warn':'bad';
+  }else{
+    momento=`⚠️ Sem margem de poupança no momento — reveja suas despesas`;
+    momentoClass='bad';
+  }
+
+  // ── ANÁLISE 2: À VISTA OU PARCELADO ──
+  let pagamento='';let pagClass='good';
+  const pctRenda=monthlyIncome>0?(val/monthlyIncome)*100:999;
+  if(pctRenda<=20&&saldoAtual>=val){
+    pagamento=`💚 <strong>À vista</strong> — cabe no orçamento sem pesar (${pctRenda.toFixed(0)}% da renda)`;
+    pagClass='good';
+  }else if(pctRenda<=50){
+    pagamento=`🟡 <strong>À vista</strong> se possível, ou <strong>2–3×</strong> sem juros — valor razoável`;
+    pagClass='warn';
+  }else{
+    pagamento=`⚠️ <strong>Parcelado</strong> recomendado — valor alto (${pctRenda.toFixed(0)}% da renda)`;
+    pagClass='bad';
+  }
+
+  // ── ANÁLISE 3: QUANTAS PARCELAS ──
+  let parcelas='';
+  const comprometimento=0.15; // máx 15% da renda por parcela
+  const maxParcela=monthlyIncome*comprometimento;
+  if(maxParcela>0){
+    const nParc=Math.min(18,Math.ceil(val/maxParcela));
+    const valParc=val/nParc;
+    if(nParc===1){
+      parcelas=`✅ <strong>À vista</strong> — parcela cabe com folga (${fm(val)})`;
+    }else{
+      // Arredondar para opções comuns
+      const opcoes=[2,3,4,6,9,10,12,18];
+      const sugerido=opcoes.find(o=>o>=nParc)||18;
+      parcelas=`💳 <strong>${sugerido}× de ${fm(val/sugerido)}</strong> — cada parcela = ${((val/sugerido)/monthlyIncome*100).toFixed(0)}% da renda`;
+    }
+  }else{
+    parcelas='— Cadastre sua renda para calcular';
+  }
+
+  // ── ANÁLISE 4: MELHOR CARTÃO ──
+  let melhorCartao='';
+  if(S.cards.length===0){
+    melhorCartao='Nenhum cartão cadastrado';
+  }else{
+    // Para cada cartão: calcular dias até o próximo vencimento (dueDay)
+    const today=now.getDate();
+    const cardScores=S.cards.map(card=>{
+      const limitUsed=getCardLimitUsed(card);
+      const disponivel=card.limit-limitUsed;
+      if(disponivel<val) return null; // limite insuficiente
+      // Dias até próximo vencimento
+      let diasAteVenc=card.dueDay-today;
+      if(diasAteVenc<=0) diasAteVenc+=30; // próximo mês
+      // Próxima receita (recurring income)
+      const proximaRenda=S.recurringIncomes.length>0?
+        S.recurringIncomes.reduce((best,inc)=>{
+          let d=inc.day-today;if(d<=0)d+=30;
+          return d<best?d:best;
+        },31):null;
+      return{card,diasAteVenc,disponivel,proximaRenda};
+    }).filter(Boolean);
+
+    if(!cardScores.length){
+      melhorCartao='⚠️ Nenhum cartão com limite suficiente — verifique seus limites';
+    }else{
+      // Melhor: maior número de dias até vencimento (mais tempo para pagar)
+      cardScores.sort((a,b)=>b.diasAteVenc-a.diasAteVenc);
+      const best=cardScores[0];
+      const rendaNote=best.proximaRenda!=null?` · próx. recebimento em ~${best.proximaRenda}d`:'';
+      melhorCartao=`🏆 <strong>${best.card.name}</strong> — vence em ${best.diasAteVenc} dias · ${fm(best.disponivel)} disponível${rendaNote}`;
+      if(cardScores.length>1){
+        const alt=cardScores[1];
+        melhorCartao+=`<br><span style="font-size:.72rem;color:var(--text2)">2º: ${alt.card.name} (${alt.diasAteVenc}d p/ vencer)</span>`;
+      }
+    }
+  }
+
+  // ── RENDERIZAR ──
+  box.innerHTML=`
+    <div class="wish-ai-title">🤖 Análise Inteligente</div>
+    <div class="wish-ai-row"><span class="wish-ai-label">⏰ Melhor Momento</span><span class="wish-ai-val ${momentoClass}">${momento}</span></div>
+    <div class="wish-ai-row"><span class="wish-ai-label">💳 Forma de Pagar</span><span class="wish-ai-val ${pagClass}">${pagamento}</span></div>
+    <div class="wish-ai-row"><span class="wish-ai-label">🔢 Nº de Parcelas</span><span class="wish-ai-val">${parcelas}</span></div>
+    <div class="wish-ai-row"><span class="wish-ai-label">🏦 Melhor Cartão</span><span class="wish-ai-val">${melhorCartao}</span></div>
+  `;
+  box.classList.add('show');
+  if(!silent) box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 // ── EXPORT / IMPORT ────────────────────────────────────────
