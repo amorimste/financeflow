@@ -36,11 +36,11 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 .bni.active .bi2{transform:scale(1.1)}
 
 /* ── MAIN ── */
-#main{margin-left:var(--sw);flex:1;min-height:100vh;padding-bottom:0}
+#main{margin-left:var(--sw);flex:1;min-height:100vh;padding-bottom:0;overflow-x:hidden;max-width:100%}
 .ph{padding:28px 28px 0;margin-bottom:20px}
 .ph h1{font-size:1.5rem;font-weight:700}
 .ph p{color:var(--text2);margin-top:3px;font-size:.85rem}
-.ca{padding:0 28px 32px}
+.ca{padding:0 28px 32px;max-width:100%;box-sizing:border-box}
 .sec{display:none}.sec.active{display:block}
 
 /* ── CARDS ── */
@@ -84,15 +84,15 @@ nav{flex:1;padding:8px 0;overflow-y:auto}
 .pf{height:100%;border-radius:4px;transition:width .5s ease}
 
 /* ── TRANSACTION LIST ── */
-.tl{display:flex;flex-direction:column;gap:7px}
-.ti{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;transition:background .2s}
+.tl{display:flex;flex-direction:column;gap:7px;width:100%;overflow:hidden}
+.ti{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card2);border:1px solid var(--border);border-radius:10px;transition:background .2s;min-width:0;overflow:hidden}
 .ti:hover{background:#252840}
 .tic{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
-.tif{flex:1;min-width:0}
+.tif{flex:1;min-width:0;overflow:hidden}
 .td{font-weight:500;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tc2{font-size:.74rem;color:var(--text2)}
-.tdate{font-size:.74rem;color:var(--text2);white-space:nowrap}
-.tam{font-weight:700;font-size:.92rem;white-space:nowrap}
+.tc2{font-size:.74rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tdate{font-size:.74rem;color:var(--text2);white-space:nowrap;flex-shrink:0}
+.tam{font-weight:700;font-size:.92rem;white-space:nowrap;flex-shrink:0}
 .tam.expense{color:var(--red)}.tam.income{color:var(--green)}
 .tact{display:flex;gap:5px;flex-shrink:0}
 .tc2-mob{display:none}
@@ -236,8 +236,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .inv-ret.pos{color:var(--green)}.inv-ret.neg{color:var(--red)}
 
 /* ── EXTRATO FILTERS ── */
-.ext-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
-.ext-filters input,.ext-filters select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit;-webkit-appearance:none;min-height:38px}
+.ext-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;width:100%}
+.ext-filters input,.ext-filters select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit;-webkit-appearance:none;min-height:38px;box-sizing:border-box;width:100%}
 .ext-filters input:focus,.ext-filters select:focus{border-color:var(--green)}
 .ext-f-full{flex:1;min-width:140px}
 
@@ -278,17 +278,22 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   /* filter bar legado */
   .fb{flex-direction:column;gap:8px}
   .fb input,.fb select{width:100%}
-  /* extrato filters — grid 2x2 */
-  .ext-filters{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  /* extrato filters — 2 col grid */
+  .ext-filters{display:grid;grid-template-columns:1fr 1fr;gap:7px}
   .ext-f-full{grid-column:1/-1}
-  /* transactions */
-  .ti{padding:9px 10px;gap:7px;min-height:0}
+  .ext-filters input,.ext-filters select{font-size:16px;padding:9px 10px}
+  /* transactions — sem overflow */
+  .ti{padding:9px 11px;gap:8px;min-height:0;box-sizing:border-box;max-width:100%}
   .tdate{display:none}
   .tc2-desk{display:none}
-  .tc2-mob{display:block;font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tam{font-size:.84rem;white-space:nowrap}
-  .tact .btn-sm{padding:4px 8px;font-size:.82rem;min-height:32px;min-width:32px}
-  .tic{width:32px;height:32px;font-size:.9rem;flex-shrink:0}
+  .tc2-mob{display:block;font-size:.69rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  .tam{font-size:.82rem;white-space:nowrap;flex-shrink:0}
+  /* botões de ação — só ícone, compactos */
+  .tact{gap:3px}
+  .tact .btn-sm{padding:5px 7px;font-size:.8rem;min-height:30px;min-width:30px;line-height:1}
+  .tic{width:30px;height:30px;font-size:.88rem;flex-shrink:0;border-radius:8px}
+  /* garantir que o container não cause overflow */
+  #ext-list{overflow:hidden;width:100%}
   /* budget */
   .bui .buh{flex-direction:column;align-items:flex-start;gap:3px}
   .bui>div:last-child{flex-wrap:wrap}
