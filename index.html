@@ -3447,21 +3447,25 @@ function epSearch(q){
 }
 
 function renderEpGrid(emojis){
+  // Usa onmousedown + preventDefault para garantir que o valor é capturado
+  // antes de qualquer evento de blur/overlay (crucial no mobile)
   document.getElementById('ep-grid').innerHTML=emojis.map(e=>
-    `<button class="ep-btn" onclick="pickEmoji('${encodeURIComponent(e)}')" title="${e}">${e}</button>`
+    `<button class="ep-btn" onmousedown="event.preventDefault();pickEmoji('${encodeURIComponent(e)}')" ontouchend="event.preventDefault();pickEmoji('${encodeURIComponent(e)}')" title="${e}">${e}</button>`
   ).join('');
 }
 
 function pickEmoji(encoded){
   const e=decodeURIComponent(encoded);
-  if(epTarget){
-    const input=document.getElementById(epTarget);
+  const target=epTarget; // captura antes do closeEmojiPicker zerar
+  closeEmojiPicker();
+  if(target){
+    const input=document.getElementById(target);
     if(input){
       input.value=e;
       input.dispatchEvent(new Event('input'));
+      input.dispatchEvent(new Event('change'));
     }
   }
-  closeEmojiPicker();
 }
 
 // ── LISTA DE DESEJOS ───────────────────────────────────────
