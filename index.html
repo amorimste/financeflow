@@ -719,8 +719,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       </div>
       <div class="fg"><label>Ícone</label>
         <div class="ep-input-row">
-          <input type="text" id="wish-icon-val" value="🛍️" readonly style="cursor:pointer;max-width:70px;text-align:center;font-size:1.4rem" onclick="openEmojiPicker('wish-icon-val',this)">
-          <button type="button" class="ep-open-btn" onclick="openEmojiPicker('wish-icon-val',this)" title="Escolher emoji">😀</button>
+          <input type="text" id="wish-icon-val" value="🛍️" maxlength="4" style="max-width:70px;text-align:center;font-size:1.4rem;cursor:text" placeholder="🛍️">
+          <button type="button" id="wish-ep-btn" class="ep-open-btn" title="Escolher emoji">😀</button>
         </div>
       </div>
     </div>
@@ -3406,14 +3406,15 @@ function openEmojiPicker(targetId, trigger){
 function positionPicker(trigger){
   const picker=document.getElementById('ep-wrap');
   const rect=trigger.getBoundingClientRect();
-  const pw=310, ph=340;
-  // Vertical
+  const pw=Math.min(310, window.innerWidth-24), ph=340;
+  picker.style.width=pw+'px';
+  // Vertical: prefers below, falls back to above
   let top=rect.bottom+6;
-  if(top+ph>window.innerHeight-12) top=Math.max(12,rect.top-ph-6);
+  if(top+ph>window.innerHeight-12) top=Math.max(8,rect.top-ph-6);
   // Horizontal
   let left=rect.left;
-  if(left+pw>window.innerWidth-12) left=window.innerWidth-pw-12;
-  left=Math.max(12,left);
+  if(left+pw>window.innerWidth-8) left=window.innerWidth-pw-8;
+  left=Math.max(8,left);
   picker.style.top=top+'px';
   picker.style.left=left+'px';
 }
@@ -3539,6 +3540,14 @@ function openWishMo(id){
     document.getElementById('wish-notes').value='';
   }
   openMo('mo-wish');
+  // Conectar o botão do emoji picker via JS (evita problemas com inline onclick no mobile)
+  const epBtn=document.getElementById('wish-ep-btn');
+  const newBtn=epBtn.cloneNode(true); // remove listeners antigos
+  epBtn.parentNode.replaceChild(newBtn,epBtn);
+  newBtn.addEventListener('click',function(e){
+    e.stopPropagation();
+    openEmojiPicker('wish-icon-val', newBtn);
+  });
 }
 
 function saveWish(){
