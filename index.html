@@ -472,7 +472,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div id="exp-form">
           <div class="fr">
             <div class="fg"><label>Descrição *</label><input type="text" id="e-desc" placeholder="Ex: Almoço no restaurante"></div>
-            <div class="fg"><label>Valor (R$) *</label><input type="number" id="e-val" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+            <div class="fg"><label>Valor (R$) *</label><input type="text" id="e-val" placeholder="0,00" inputmode="decimal"></div>
           </div>
           <div class="fr">
             <div class="fg"><label>Categoria *</label><select id="e-cat"></select></div>
@@ -504,7 +504,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
         <div id="inc-form" style="display:none">
           <div class="fr">
             <div class="fg"><label>Descrição *</label><input type="text" id="i-desc" placeholder="Ex: Salário mensal"></div>
-            <div class="fg"><label>Valor (R$) *</label><input type="number" id="i-val" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+            <div class="fg"><label>Valor (R$) *</label><input type="text" id="i-val" placeholder="0,00" inputmode="decimal"></div>
           </div>
           <div class="fr">
             <div class="fg"><label>Tipo de Receita *</label>
@@ -524,12 +524,29 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
             <label style="flex:1;margin:0;cursor:pointer" onclick="document.getElementById('i-fixed').click()">📅 <strong>Receita Fixa</strong> — Recebe todo mês automaticamente?</label>
           </div>
           <!-- Campos de receita fixa -->
-          <div id="inc-fixed-fields" style="display:none;padding:12px;background:var(--card2);border-radius:8px;margin-bottom:12px">
+          <div id="inc-fixed-fields" style="display:none;padding:14px;background:var(--card2);border-radius:10px;margin-bottom:12px;border:1px solid var(--border)">
             <div class="fg"><label>Dia do Recebimento (1-31) *</label>
               <input type="number" id="i-fixed-day" min="1" max="31" placeholder="Ex: 5" inputmode="numeric">
             </div>
-            <div style="font-size:.78rem;color:var(--text2);margin-top:6px">
-              💡 A receita será adicionada automaticamente no dia especificado cada mês
+            <!-- Pergunta: adicionar ao saldo agora ou aguardar -->
+            <div style="margin-top:8px">
+              <div style="font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:8px">💡 Deseja adicionar esta receita ao saldo agora?</div>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.2);border-radius:8px;cursor:pointer">
+                  <input type="radio" name="inc-add-now" id="i-add-now-yes" value="yes" style="width:16px;height:16px;margin-top:2px;accent-color:var(--green)">
+                  <div>
+                    <div style="font-size:.84rem;font-weight:600;color:var(--green)">✅ Sim, já recebi — adicionar ao saldo agora</div>
+                    <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Registra como recebido hoje e agenda para os próximos meses</div>
+                  </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;cursor:pointer">
+                  <input type="radio" name="inc-add-now" id="i-add-now-no" value="no" checked style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue)">
+                  <div>
+                    <div style="font-size:.84rem;font-weight:600;color:var(--blue)">📅 Não — aguardar o próximo dia de pagamento</div>
+                    <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Será adicionado automaticamente todo dia <span id="inc-day-preview">—</span> de cada mês</div>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
           <div class="fg"><label>Observação</label><textarea id="i-obs" rows="2" placeholder="Opcional..."></textarea></div>
@@ -556,7 +573,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
             <div style="color:var(--text2);font-size:.75rem;margin-top:4px">Instituição: <strong id="ni-inst-label">—</strong></div>
           </div>
           <div class="fr">
-            <div class="fg"><label>Valor Aportado (R$) *</label><input type="number" id="ni-val" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+            <div class="fg"><label>Valor Aportado (R$) *</label><input type="text" id="ni-val" inputmode="decimal" placeholder="0,00"></div>
             <div class="fg"><label>Data do Aporte *</label><input type="date" id="ni-date"></div>
           </div>
           <div class="fg"><label>Notas (opcional)</label><input type="text" id="ni-notes" placeholder="Ex: Investimento estratégico..."></div>
@@ -707,7 +724,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <input type="hidden" id="wish-id">
     <div class="fr">
       <div class="fg"><label>Nome do item *</label><input type="text" id="wish-name" placeholder="Ex: iPhone 16, TV 65&quot;, Viagem..."></div>
-      <div class="fg"><label>Valor (R$) *</label><input type="number" id="wish-value" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+      <div class="fg"><label>Valor (R$) *</label><input type="text" id="wish-value" placeholder="0,00" inputmode="decimal"></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Prioridade</label>
@@ -751,7 +768,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <input type="hidden" id="ed-id">
     <div class="fr">
       <div class="fg"><label>Descrição</label><input type="text" id="ed-desc"></div>
-      <div class="fg"><label>Valor (R$)</label><input type="number" id="ed-val" step="0.01" inputmode="decimal"></div>
+      <div class="fg"><label>Valor (R$)</label><input type="text" id="ed-val" inputmode="decimal"></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Categoria</label><select id="ed-cat"></select></div>
@@ -810,7 +827,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <div style="font-size:.78rem;font-weight:600;margin-bottom:10px;color:var(--text2)">➕ Novo Lançamento neste Cartão</div>
       <div class="fr" style="margin-bottom:8px">
         <div class="fg" style="margin-bottom:0"><label>Descrição *</label><input type="text" id="cdl-desc" placeholder="Ex: Restaurante..."></div>
-        <div class="fg" style="margin-bottom:0"><label>Valor (R$) *</label><input type="number" id="cdl-val" step="0.01" inputmode="decimal" placeholder="0,00"></div>
+        <div class="fg" style="margin-bottom:0"><label>Valor (R$) *</label><input type="text" id="cdl-val" inputmode="decimal" placeholder="0,00"></div>
       </div>
       <div class="fr" style="margin-bottom:8px">
         <div class="fg" style="margin-bottom:0"><label>Categoria</label><select id="cdl-cat"></select></div>
@@ -890,8 +907,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     </div>
     <div class="fr">
       <div class="fg"><label>Limite Total (R$) *</label>
-        <input type="number" id="cd-limit" step="0.01" inputmode="decimal" placeholder="5000"
-          oninput="document.getElementById('cdp-limit').textContent=this.value?'R$ '+parseFloat(this.value).toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'">
+        <input type="text" id="cd-limit" inputmode="decimal" placeholder="5000"
+          oninput="const v=parseMoney(this.value);document.getElementById('cdp-limit').textContent=!isNaN(v)?fm(v):'—'">
       </div>
       <div class="fg" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div>
@@ -921,7 +938,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <input type="hidden" id="bl-id">
     <div class="fr">
       <div class="fg"><label>Nome</label><input type="text" id="bl-name" placeholder="Ex: Aluguel..."></div>
-      <div class="fg"><label>Valor (R$)</label><input type="number" id="bl-val" step="0.01" placeholder="0,00" inputmode="decimal"></div>
+      <div class="fg"><label>Valor (R$)</label><input type="text" id="bl-val" placeholder="0,00" inputmode="decimal"></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Dia Vencimento</label><input type="number" id="bl-due" min="1" max="31" placeholder="10" inputmode="numeric"></div>
@@ -1003,8 +1020,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       <div class="fg"><label>Data do Aporte</label><input type="date" id="iv-date"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Valor Investido (R$) *</label><input type="number" id="iv-invested" placeholder="0,00" step="0.01" inputmode="decimal"></div>
-      <div class="fg"><label>Valor Atual (R$) *</label><input type="number" id="iv-current" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Investido (R$) *</label><input type="text" id="iv-invested" placeholder="0,00" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Atual (R$) *</label><input type="text" id="iv-current" placeholder="0,00" inputmode="decimal"></div>
     </div>
     <div class="fg"><label>Notas</label><textarea id="iv-notes" rows="2" placeholder="Opcional..."></textarea></div>
     <div class="mdf">
@@ -1030,8 +1047,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       </div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Valor Total (R$) *</label><input type="number" id="gl-target" placeholder="10000" step="0.01" inputmode="decimal"></div>
-      <div class="fg"><label>Já Guardado (R$)</label><input type="number" id="gl-current" placeholder="0" step="0.01" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Total (R$) *</label><input type="text" id="gl-target" placeholder="10000" inputmode="decimal"></div>
+      <div class="fg"><label>Já Guardado (R$)</label><input type="text" id="gl-current" placeholder="0" inputmode="decimal"></div>
     </div>
     <div class="fr">
       <div class="fg"><label>Prazo</label><input type="date" id="gl-deadline"></div>
@@ -1062,7 +1079,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="md-handle"></div>
     <h2 id="goal-add-title">Adicionar à Meta</h2>
     <input type="hidden" id="gla-id">
-    <div class="fg"><label>Valor a Adicionar (R$) *</label><input type="number" id="gla-val" placeholder="0,00" step="0.01" inputmode="decimal"></div>
+    <div class="fg"><label>Valor a Adicionar (R$) *</label><input type="text" id="gla-val" placeholder="0,00" inputmode="decimal"></div>
     <div class="fg"><label>Data</label><input type="date" id="gla-date"></div>
     <div class="fg"><label>Lançar como despesa no extrato?</label>
       <select id="gla-launch">
@@ -1120,11 +1137,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
       </div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Valor Original (R$) *</label><input type="number" id="dv-orig" step="0.01" placeholder="0,00" inputmode="decimal"></div>
-      <div class="fg"><label>Valor Atual para Quitar (R$) *</label><input type="number" id="dv-curr" step="0.01" placeholder="0,00" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Original (R$) *</label><input type="text" id="dv-orig" placeholder="0,00" inputmode="decimal"></div>
+      <div class="fg"><label>Valor Atual para Quitar (R$) *</label><input type="text" id="dv-curr" placeholder="0,00" inputmode="decimal"></div>
     </div>
     <div class="fr">
-      <div class="fg"><label>Valor Negociado (R$)</label><input type="number" id="dv-nego" step="0.01" placeholder="Se já negociou..." inputmode="decimal"></div>
+      <div class="fg"><label>Valor Negociado (R$)</label><input type="text" id="dv-nego" placeholder="Se já negociou..." inputmode="decimal"></div>
       <div class="fg"><label>Status</label>
         <select id="dv-status">
           <option value="pendente">⏳ Pendente</option>
@@ -1367,6 +1384,18 @@ function seedDemo(){
 // ── UTILS ──────────────────────────────────────────────────
 function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36)}
 function fm(v){return'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+// Aceita formatos: 1500 | 1500.50 | 1.500,50 | 1500,50 | R$ 1.500,50
+function parseMoney(s){
+  if(s===null||s===undefined||s==='')return NaN;
+  s=String(s).trim().replace(/R\$\s*/,'').replace(/\s/g,'');
+  if(!s)return NaN;
+  if(s.includes(',')){
+    // Formato BR: separador milhar = ponto, decimal = vírgula
+    s=s.replace(/\./g,'').replace(',','.');
+  }
+  // Formato US ou só número: ponto como decimal
+  return parseFloat(s);
+}
 function fd(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}
 function mk(m,y){return`${y}-${String(m+1).padStart(2,'0')}`}
 function getTxns(m,y){const k=mk(m,y);return S.txns.filter(t=>t.date&&t.date.startsWith(k))}
@@ -1853,7 +1882,7 @@ function updNiType(){
 
 function saveInvestLaunch(){
   const typeId=document.getElementById('ni-type').value;
-  const val=parseFloat(document.getElementById('ni-val').value);
+  const val=parseMoney(document.getElementById('ni-val').value);
   const date=document.getElementById('ni-date').value;
   const notes=document.getElementById('ni-notes').value.trim();
 
@@ -1924,7 +1953,7 @@ function updBillingInfo(){
 }
 function saveExp(){
   const desc=document.getElementById('e-desc').value.trim();
-  const val=parseFloat(document.getElementById('e-val').value);
+  const val=parseMoney(document.getElementById('e-val').value);
   const cat=document.getElementById('e-cat').value;
   const date=document.getElementById('e-date').value;
   const pay=document.getElementById('e-pay').value;
@@ -1961,6 +1990,14 @@ function saveExp(){
 function updIncFixed(){
   const fixed=document.getElementById('i-fixed').checked;
   document.getElementById('inc-fixed-fields').style.display=fixed?'block':'none';
+  // Listener para atualizar preview do dia
+  const dayInput=document.getElementById('i-fixed-day');
+  dayInput.oninput=()=>{
+    const d=dayInput.value;
+    document.getElementById('inc-day-preview').textContent=d||'—';
+  };
+  // Reset radio para "não" ao mostrar
+  if(fixed) document.getElementById('i-add-now-no').checked=true;
 }
 
 function openIncMo(){
@@ -1990,7 +2027,7 @@ function rendRecIncList(){
 
 function saveInc(){
   const desc=document.getElementById('i-desc').value.trim();
-  const val=parseFloat(document.getElementById('i-val').value);
+  const val=parseMoney(document.getElementById('i-val').value);
   const cat=document.getElementById('i-cat').value;
   const date=document.getElementById('i-date').value;
   const obs=document.getElementById('i-obs').value.trim();
@@ -2006,12 +2043,28 @@ function saveInc(){
 
   // Se for receita fixa, adiciona a S.recurringIncomes
   if(isFixed){
-    S.recurringIncomes.push({id:uid(),desc,value:val,category:cat,day:fixedDay,obs});
+    const addNow=document.getElementById('i-add-now-yes').checked;
+    // Registra a receita recorrente
+    const recId=uid();
+    S.recurringIncomes.push({id:recId,desc,value:val,category:cat,day:fixedDay,obs});
+    // Se escolheu adicionar ao saldo agora, registra transação de hoje
+    if(addNow){
+      const today=new Date().toISOString().split('T')[0];
+      S.txns.push({
+        id:uid(),type:'income',desc,value:val,category:cat,
+        date:today,payment:'pix',obs:obs?(obs+' · '):'Lançado imediatamente ao cadastrar receita fixa',
+        isRecurring:true,recurringId:recId
+      });
+    }
     persist();
     document.getElementById('i-desc').value='';document.getElementById('i-val').value='';
     document.getElementById('i-obs').value='';document.getElementById('i-fixed').checked=false;
     document.getElementById('i-fixed-day').value='';updIncFixed();
-    toast(`Receita fixa "${desc}" cadastrada! Será adicionada todo dia ${fixedDay}. 📅`);
+    if(addNow){
+      toast(`✅ ${fm(val)} adicionados ao saldo! Receita fixa agendada para todo dia ${fixedDay}. 📅`);
+    }else{
+      toast(`📅 Receita fixa "${desc}" agendada! Será adicionada automaticamente todo dia ${fixedDay}.`);
+    }
   } else {
     // Receita comum
     S.txns.push({id:uid(),type:'income',desc,value:val,category:cat,date,payment:'pix',obs});
@@ -2084,7 +2137,7 @@ function editTxn(id){
 }
 function saveEditTxn(){
   const id=document.getElementById('ed-id').value;const t=S.txns.find(t=>t.id===id);if(!t)return;
-  t.desc=document.getElementById('ed-desc').value.trim();t.value=parseFloat(document.getElementById('ed-val').value);t.category=document.getElementById('ed-cat').value;t.date=document.getElementById('ed-date').value;t.obs=document.getElementById('ed-obs').value.trim();
+  t.desc=document.getElementById('ed-desc').value.trim();t.value=parseMoney(document.getElementById('ed-val').value);t.category=document.getElementById('ed-cat').value;t.date=document.getElementById('ed-date').value;t.obs=document.getElementById('ed-obs').value.trim();
   persist();closeMo('mo-txn');rendExt();toast('Lançamento atualizado');
 }
 
@@ -2280,7 +2333,7 @@ function openCardMo(id){
 function saveCard(){
   const id=document.getElementById('cd-id').value;
   const name=document.getElementById('cd-name').value.trim();
-  const limit=parseFloat(document.getElementById('cd-limit').value);
+  const limit=parseMoney(document.getElementById('cd-limit').value);
   const closeDay=parseInt(document.getElementById('cd-close').value);
   const dueDay=parseInt(document.getElementById('cd-due').value);
   const gradient=document.getElementById('cd-gradient').value||CARD_BRANDS[0].grad;
@@ -2408,7 +2461,7 @@ function openBillMo(id){
 function saveBill(){
   const id=document.getElementById('bl-id').value;
   const name=document.getElementById('bl-name').value.trim();
-  const value=parseFloat(document.getElementById('bl-val').value);
+  const value=parseMoney(document.getElementById('bl-val').value);
   const dueDay=parseInt(document.getElementById('bl-due').value);
   const category=document.getElementById('bl-cat').value;
   const paymentMethod=document.getElementById('bl-pay').value;
@@ -2514,8 +2567,8 @@ function saveInv(){
   const institution=document.getElementById('iv-inst').value.trim();
   const type=document.getElementById('iv-type').value;
   const date=document.getElementById('iv-date').value;
-  const invested=parseFloat(document.getElementById('iv-invested').value);
-  const currentValue=parseFloat(document.getElementById('iv-current').value);
+  const invested=parseMoney(document.getElementById('iv-invested').value);
+  const currentValue=parseMoney(document.getElementById('iv-current').value);
   const notes=document.getElementById('iv-notes').value.trim();
   if(!name||!invested||!currentValue){toast('Preencha os campos obrigatórios','error');return}
   if(id) Object.assign(S.investments.find(i=>i.id===id),{name,institution,type,date,invested,currentValue,notes});
@@ -2581,8 +2634,8 @@ function saveGoal(){
   const id=document.getElementById('gl-id').value;
   const name=document.getElementById('gl-name').value.trim();
   const icon=document.getElementById('gl-icon').value.trim()||'🎯';
-  const targetAmount=parseFloat(document.getElementById('gl-target').value);
-  const currentAmount=parseFloat(document.getElementById('gl-current').value)||0;
+  const targetAmount=parseMoney(document.getElementById('gl-target').value);
+  const currentAmount=parseMoney(document.getElementById('gl-current').value)||0;
   const deadline=document.getElementById('gl-deadline').value;
   const color=document.getElementById('gl-color').value;
   const category=document.getElementById('gl-cat').value;
@@ -2602,7 +2655,7 @@ function openGoalAdd(id){
 function saveGoalAdd(){
   const id=document.getElementById('gla-id').value;
   const g=S.goals.find(g=>g.id===id);if(!g)return;
-  const val=parseFloat(document.getElementById('gla-val').value);
+  const val=parseMoney(document.getElementById('gla-val').value);
   const date=document.getElementById('gla-date').value;
   const launch=document.getElementById('gla-launch').value;
   if(!val||val<=0){toast('Digite um valor','error');return}
@@ -2785,7 +2838,7 @@ function rendCdlList(card, periods, creditTxns){
 
 function saveCdlVal(txnId){
   const t=S.txns.find(t=>t.id===txnId);if(!t)return;
-  const newVal=parseFloat(document.getElementById('cdl-inp-'+txnId).value);
+  const newVal=parseMoney(document.getElementById('cdl-inp-'+txnId).value);
   if(!newVal||newVal<=0){toast('Valor inválido','error');return}
   t.value=newVal;
   persist();
@@ -2883,7 +2936,7 @@ function updCdlFaturaFromDate(){
 
 function saveCdlExpense(){
   const desc=document.getElementById('cdl-desc').value.trim();
-  const val=parseFloat(document.getElementById('cdl-val').value);
+  const val=parseMoney(document.getElementById('cdl-val').value);
   const cat=document.getElementById('cdl-cat').value;
   const date=document.getElementById('cdl-date').value;
   const instStr=document.getElementById('cdl-inst').value;
@@ -3088,9 +3141,9 @@ function saveDiv(){
   const id=document.getElementById('dv-id').value;
   const creditor=document.getElementById('dv-cred').value.trim();
   const type=document.getElementById('dv-type').value;
-  const originalAmount=parseFloat(document.getElementById('dv-orig').value)||0;
-  const currentAmount=parseFloat(document.getElementById('dv-curr').value)||0;
-  const negotiatedAmount=parseFloat(document.getElementById('dv-nego').value)||0;
+  const originalAmount=parseMoney(document.getElementById('dv-orig').value)||0;
+  const currentAmount=parseMoney(document.getElementById('dv-curr').value)||0;
+  const negotiatedAmount=parseMoney(document.getElementById('dv-nego').value)||0;
   const status=document.getElementById('dv-status').value;
   const notes=document.getElementById('dv-notes').value.trim();
   if(!creditor||!currentAmount){toast('Preencha credor e valor atual','error');return}
@@ -3556,7 +3609,7 @@ function openWishMo(id){
 
 function saveWish(){
   const name=document.getElementById('wish-name').value.trim();
-  const value=parseFloat(document.getElementById('wish-value').value);
+  const value=parseMoney(document.getElementById('wish-value').value);
   if(!name||!value||value<=0){toast('Preencha nome e valor','error');return}
   const id=document.getElementById('wish-id').value;
   const obj={
