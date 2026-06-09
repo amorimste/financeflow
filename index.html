@@ -357,6 +357,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   #goals-grid{grid-template-columns:1fr!important}
   #wish-list{grid-template-columns:1fr!important}
   #wish-sum-cards{grid-template-columns:repeat(2,1fr)!important}
+  #rec-sum-cards{grid-template-columns:repeat(2,1fr)!important}
   .wish-card{padding:14px}
   .wish-ai-label{min-width:80px;font-size:.68rem}
   /* cartões — header buttons stack */
@@ -413,6 +414,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
     <div class="ni active" data-sec="dashboard" onclick="nav('dashboard')"><span class="ic">🏠</span>Dashboard</div>
     <div class="ni" data-sec="novo" onclick="nav('novo')"><span class="ic">➕</span>Novo Lançamento</div>
     <div class="ni" data-sec="extrato" onclick="nav('extrato')"><span class="ic">📋</span>Extrato</div>
+    <div class="ni" data-sec="receitas" onclick="nav('receitas')"><span class="ic">💰</span>Receitas</div>
     <div class="ni" data-sec="cartoes" onclick="nav('cartoes')"><span class="ic">💳</span>Cartões</div>
     <div class="ni" data-sec="contas" onclick="nav('contas')"><span class="ic">🔁</span>Contas Fixas</div>
     <div class="ni" data-sec="dividas" onclick="nav('dividas')"><span class="ic">💸</span>Dívidas</div>
@@ -607,6 +609,42 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
   </div>
 </div>
 
+<!-- RECEITAS -->
+<div id="sec-receitas" class="sec">
+  <div class="ph"><h1>💰 Receitas</h1><p>Lançamentos e recorrências</p></div>
+  <div class="ca">
+    <div class="g4" id="rec-sum-cards" style="margin-bottom:16px"></div>
+    <div class="tabs" style="margin-bottom:16px">
+      <button class="tab active" id="rtab-lanc" onclick="swRecTab('lancadas')">📥 Lançadas</button>
+      <button class="tab" id="rtab-fix" onclick="swRecTab('fixas')">🔁 Fixas</button>
+    </div>
+    <!-- Lançadas -->
+    <div id="rec-lancadas">
+      <div class="ext-filters" style="margin-bottom:12px">
+        <input type="month" id="rf-month" onchange="rendReceitas()" class="ext-f-full">
+        <select id="rf-cat" onchange="rendReceitas()" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.82rem;outline:none;font-family:inherit">
+          <option value="">Todas categorias</option>
+          <option value="Salário">💰 Salário</option>
+          <option value="Bônus">🎁 Bônus</option>
+          <option value="Hora Extra">⏰ Hora Extra</option>
+          <option value="Freelance">💻 Freelance</option>
+          <option value="Rend. Investimentos">📈 Rend. Investimentos</option>
+          <option value="Outros">🌟 Outros</option>
+        </select>
+        <input type="text" id="rf-search" placeholder="🔍 Buscar..." oninput="rendReceitas()" class="ext-f-full">
+      </div>
+      <div id="rec-lanc-list"></div>
+    </div>
+    <!-- Fixas -->
+    <div id="rec-fixas" style="display:none">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-s" onclick="nav('novo');swTab('income')">+ Nova Receita Fixa</button>
+      </div>
+      <div id="rec-fix-list"></div>
+    </div>
+  </div>
+</div>
+
 <!-- CARTÕES -->
 <div id="sec-cartoes" class="sec">
   <div class="ph"><h1>Cartões de Crédito</h1><p>Faturas e limites</p></div>
@@ -715,6 +753,39 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 </div>
 
 </main>
+
+<!-- MODAL: Editar Receita Fixa -->
+<div class="mo" id="mo-edit-rec-inc">
+  <div class="md" style="max-width:480px">
+    <div class="md-handle"></div>
+    <h2>✏️ Editar Receita Fixa</h2>
+    <input type="hidden" id="eri-id">
+    <div class="fr">
+      <div class="fg"><label>Descrição *</label><input type="text" id="eri-desc" placeholder="Ex: Salário mensal"></div>
+      <div class="fg"><label>Valor (R$) *</label><input type="text" id="eri-val" placeholder="0,00" inputmode="decimal"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Categoria</label>
+        <select id="eri-cat">
+          <option value="Salário">💰 Salário</option>
+          <option value="Bônus">🎁 Bônus</option>
+          <option value="Hora Extra">⏰ Hora Extra</option>
+          <option value="Freelance">💻 Freelance</option>
+          <option value="Rend. Investimentos">📈 Rend. Investimentos</option>
+          <option value="Outros">🌟 Outros</option>
+        </select>
+      </div>
+      <div class="fg"><label>Dia do Recebimento (1-31) *</label>
+        <input type="number" id="eri-day" min="1" max="31" placeholder="Ex: 5" inputmode="numeric">
+      </div>
+    </div>
+    <div class="fg"><label>Observação</label><input type="text" id="eri-obs" placeholder="Opcional..."></div>
+    <div class="mdf">
+      <button class="btn btn-s" onclick="closeMo('mo-edit-rec-inc')">Cancelar</button>
+      <button class="btn btn-p" style="width:auto;flex:1" onclick="saveEditRecInc()">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: Desejo -->
 <div class="mo" id="mo-wish">
@@ -1489,6 +1560,7 @@ function nav(sec){
   closeSidebar();
   if(sec==='dashboard') rendDash();
   else if(sec==='extrato') rendExt();
+  else if(sec==='receitas'){recTab='lancadas';rendReceitas();}
   else if(sec==='cartoes') rendCards();
   else if(sec==='contas') rendBills();
   else if(sec==='dividas') rendDividas();
@@ -2745,8 +2817,11 @@ function openCardDetail(cardId){
   const fat=getCurrentFatura(card);
   billMonthSet.add(fat.billMonth);
 
-  // Ordenar desc e pegar até 6 períodos
-  const periods=[...billMonthSet].sort().reverse().slice(0,6);
+  // Ordenar: mês atual primeiro, depois futuros em ordem asc, depois passados desc
+  const allP=[...billMonthSet].sort();
+  const curBM=fat.billMonth;
+  const futurePast=allP.filter(p=>p>=curBM).concat(allP.filter(p=>p<curBM).reverse());
+  const periods=futurePast.slice(0,6);
   cdlPeriod=fat.billMonth;
 
   // Cabeçalho mini do cartão
@@ -2780,7 +2855,9 @@ function setCdlPeriod(p){
   document.querySelectorAll('.cdl-tab').forEach(t=>t.classList.toggle('active',t.textContent.trim()===formatPeriodLabel(p)));
   const card=getCard(cdlCardId);if(!card)return;
   const creditTxns=S.txns.filter(t=>t.type==='expense'&&t.cardId===cdlCardId&&['credit','credit-installment'].includes(t.payment));
-  const periods=[...new Set([...creditTxns.map(t=>getBillingMonth(t,card)),getCurrentFatura(card).billMonth])].sort().reverse().slice(0,6);
+  const _allP2=[...new Set([...creditTxns.map(t=>getBillingMonth(t,card)),getCurrentFatura(card).billMonth])].sort();
+  const _cur2=getCurrentFatura(card).billMonth;
+  const periods=[..._allP2.filter(p=>p>=_cur2),..._allP2.filter(p=>p<_cur2).reverse()].slice(0,6);
   rendCdlList(card, periods, creditTxns);
   toggleCdlAdd(false);
 }
@@ -3519,6 +3596,135 @@ function pickEmoji(encoded){
       input.dispatchEvent(new Event('change'));
     }
   }
+}
+
+// ── RECEITAS ───────────────────────────────────────────────
+let recTab='lancadas';
+
+function swRecTab(tab){
+  recTab=tab;
+  document.getElementById('rtab-lanc').classList.toggle('active',tab==='lancadas');
+  document.getElementById('rtab-fix').classList.toggle('active',tab==='fixas');
+  document.getElementById('rec-lancadas').style.display=tab==='lancadas'?'block':'none';
+  document.getElementById('rec-fixas').style.display=tab==='fixas'?'block':'none';
+  if(tab==='lancadas') rendRecLancadas();
+  else rendRecFixas();
+}
+
+function rendReceitas(){
+  // Summary cards
+  const now=new Date();const m=now.getMonth();const y=now.getFullYear();
+  const mkey=mk(m,y);
+  const allIncs=S.txns.filter(t=>t.type==='income');
+  const mesIncs=allIncs.filter(t=>t.date.startsWith(mkey));
+  const totMes=mesIncs.reduce((s,t)=>s+Number(t.value),0);
+  const totFixas=S.recurringIncomes.reduce((s,i)=>s+Number(i.value),0);
+  const totAnual=totFixas*12;
+  document.getElementById('rec-sum-cards').innerHTML=`
+    <div class="sc gr"><div class="lbl">💰 Receitas do Mês</div><div class="val gr">${fm(totMes)}</div><div class="sub">${mesIncs.length} lançamento(s)</div></div>
+    <div class="sc bl"><div class="lbl">🔁 Recorrência Mensal</div><div class="val bl">${fm(totFixas)}</div><div class="sub">${S.recurringIncomes.length} receita(s) fixa(s)</div></div>
+    <div class="sc pu"><div class="lbl">📅 Projeção Anual</div><div class="val pu">${fm(totAnual)}</div><div class="sub">Baseado nas fixas</div></div>
+    <div class="sc or"><div class="lbl">📊 Total Histórico</div><div class="val or">${fm(allIncs.reduce((s,t)=>s+Number(t.value),0))}</div><div class="sub">${allIncs.length} lançamentos</div></div>`;
+  if(recTab==='lancadas') rendRecLancadas();
+  else rendRecFixas();
+}
+
+function rendRecLancadas(){
+  const mf=document.getElementById('rf-month');
+  if(!mf.value) mf.value=mk(new Date().getMonth(),new Date().getFullYear());
+  let list=S.txns.filter(t=>t.type==='income');
+  if(mf.value) list=list.filter(t=>t.date.startsWith(mf.value));
+  const cf=document.getElementById('rf-cat').value;if(cf) list=list.filter(t=>t.category===cf);
+  const sf=document.getElementById('rf-search').value.toLowerCase();if(sf) list=list.filter(t=>t.desc.toLowerCase().includes(sf));
+  list.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el=document.getElementById('rec-lanc-list');
+  if(!list.length){el.innerHTML=`<div class="es"><div class="ei">💰</div><p>Nenhuma receita neste período</p></div>`;return}
+  el.innerHTML=`<div class="tl">${list.map(t=>{
+    const cat=getCat(t.category);
+    return`<div class="ti">
+      <div class="tic" style="background:rgba(0,200,150,.15)">${cat.icon}</div>
+      <div class="tif">
+        <div class="td">${t.desc}</div>
+        <div class="tc2 tc2-desk">${cat.icon} ${t.category}</div>
+        <div class="tc2 tc2-mob">${fd(t.date)} · ${t.category}</div>
+      </div>
+      <div class="tdate">${fd(t.date)}</div>
+      <div class="tam income">+ ${fm(t.value)}</div>
+      <div class="tact">
+        <button class="btn btn-s btn-sm" onclick="editTxn('${t.id}')">✏️</button>
+        <button class="btn btn-d btn-sm" onclick="delIncTxn('${t.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function delIncTxn(id){
+  if(!confirm('Excluir este lançamento de receita?'))return;
+  S.txns=S.txns.filter(t=>t.id!==id);
+  persist();rendRecLancadas();rendReceitas();toast('Receita excluída');
+}
+
+function rendRecFixas(){
+  const el=document.getElementById('rec-fix-list');
+  if(!S.recurringIncomes.length){
+    el.innerHTML=`<div class="es"><div class="ei">🔁</div><p>Nenhuma receita fixa cadastrada.<br><small>Vá em <strong>Novo Lançamento → Receita</strong> e marque "Receita Fixa".</small></p></div>`;
+    return;
+  }
+  el.innerHTML=S.recurringIncomes.map(inc=>{
+    const today=new Date().getDate();
+    let diasProx=inc.day-today;if(diasProx<=0)diasProx+=30;
+    const badge=diasProx<=3?`<span class="badge" style="background:rgba(0,200,150,.15);color:var(--green)">Em ${diasProx}d</span>`:
+                diasProx<=7?`<span class="badge" style="background:rgba(255,159,67,.15);color:var(--orange)">Em ${diasProx}d</span>`:
+                `<span class="badge" style="background:rgba(255,255,255,.06);color:var(--text2)">Dia ${inc.day}</span>`;
+    return`<div class="bi-item" style="flex-wrap:wrap;gap:10px">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(0,200,150,.12);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">💰</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inc.desc}</div>
+        <div style="font-size:.72rem;color:var(--text2);margin-top:2px">${inc.category} · ${badge}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-weight:700;color:var(--green);font-size:1rem">${fm(inc.value)}</div>
+        <div style="font-size:.7rem;color:var(--text2)">por mês</div>
+      </div>
+      <div style="display:flex;gap:6px;width:100%;justify-content:flex-end">
+        <button class="btn btn-s btn-sm" onclick="openEditRecInc('${inc.id}')">✏️ Editar</button>
+        <button class="btn btn-d btn-sm" onclick="delRecIncFromRec('${inc.id}')">🗑️ Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openEditRecInc(id){
+  const inc=S.recurringIncomes.find(i=>i.id===id);if(!inc)return;
+  document.getElementById('eri-id').value=id;
+  document.getElementById('eri-desc').value=inc.desc;
+  document.getElementById('eri-val').value=inc.value;
+  document.getElementById('eri-cat').value=inc.category||'Salário';
+  document.getElementById('eri-day').value=inc.day;
+  document.getElementById('eri-obs').value=inc.obs||'';
+  openMo('mo-edit-rec-inc');
+}
+
+function saveEditRecInc(){
+  const id=document.getElementById('eri-id').value;
+  const inc=S.recurringIncomes.find(i=>i.id===id);if(!inc)return;
+  const desc=document.getElementById('eri-desc').value.trim();
+  const val=parseMoney(document.getElementById('eri-val').value);
+  const day=parseInt(document.getElementById('eri-day').value);
+  if(!desc||isNaN(val)||val<=0){toast('Preencha descrição e valor','error');return}
+  if(!day||day<1||day>31){toast('Dia deve ser entre 1 e 31','error');return}
+  inc.desc=desc;inc.value=val;inc.day=day;
+  inc.category=document.getElementById('eri-cat').value;
+  inc.obs=document.getElementById('eri-obs').value.trim();
+  persist();closeMo('mo-edit-rec-inc');rendRecFixas();rendReceitas();
+  toast(`✅ "${desc}" atualizada!`);
+}
+
+function delRecIncFromRec(id){
+  const inc=S.recurringIncomes.find(i=>i.id===id);if(!inc)return;
+  if(!confirm(`Excluir a receita fixa "${inc.desc}"?\n\nOs lançamentos já feitos no extrato não serão removidos.`))return;
+  S.recurringIncomes=S.recurringIncomes.filter(i=>i.id!==id);
+  persist();rendRecFixas();rendReceitas();toast('Receita fixa excluída');
 }
 
 // ── LISTA DE DESEJOS ───────────────────────────────────────
