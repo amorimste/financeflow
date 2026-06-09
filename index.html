@@ -581,6 +581,26 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
             <div class="fg"><label>Data do Aporte *</label><input type="date" id="ni-date"></div>
           </div>
           <div class="fg"><label>Notas (opcional)</label><input type="text" id="ni-notes" placeholder="Ex: Aporte mensal..."></div>
+          <!-- Desconto do saldo -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:8px">💸 Este valor sai do seu saldo bancário?</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.2);border-radius:8px;cursor:pointer">
+                <input type="radio" name="ni-deduct" id="ni-deduct-yes" value="yes" checked style="width:16px;height:16px;margin-top:2px;accent-color:var(--red)">
+                <div>
+                  <div style="font-size:.84rem;font-weight:600;color:var(--red)">✅ Sim — descontar do saldo agora</div>
+                  <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Lança uma saída no extrato (PIX/transferência para investimento)</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;cursor:pointer">
+                <input type="radio" name="ni-deduct" id="ni-deduct-no" value="no" style="width:16px;height:16px;margin-top:2px;accent-color:var(--blue)">
+                <div>
+                  <div style="font-size:.84rem;font-weight:600;color:var(--blue)">📋 Não — só registrar o aporte</div>
+                  <div style="font-size:.72rem;color:var(--text2);margin-top:2px">Apenas atualiza o valor investido, sem mexer no saldo</div>
+                </div>
+              </label>
+            </div>
+          </div>
           <button class="btn btn-p" style="background:var(--blue)" onclick="saveInvestLaunch()">💹 Registrar Aporte</button>
         </div>
 
@@ -1981,14 +2001,32 @@ function saveInvestLaunch(){
   inv.lastAportDate=date;
   if(notes) inv.notes=notes;
 
+  // Descontar do saldo se selecionado
+  const deduct=document.getElementById('ni-deduct-yes').checked;
+  if(deduct){
+    S.txns.push({
+      id:uid(),type:'expense',
+      desc:`Aporte: ${inv.name}`,
+      value:val,
+      category:'Investimentos',
+      date,
+      payment:'pix',
+      obs:notes||`Aporte em ${inv.name}`
+    });
+  }
+
   persist();
   document.getElementById('ni-val').value='';
   document.getElementById('ni-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('ni-notes').value='';
   document.getElementById('ni-type').value='';
+  document.getElementById('ni-deduct-yes').checked=true;
   updNiType();
-  updNiTypeOptions(); // atualiza valores no dropdown
-  toast(`✅ Aporte de ${fm(val)} adicionado a "${inv.name}"! 💹`);
+  updNiTypeOptions();
+  const msg=deduct
+    ?`✅ Aporte de ${fm(val)} em "${inv.name}" — descontado do saldo! 💹`
+    :`💹 Aporte de ${fm(val)} registrado em "${inv.name}"!`;
+  toast(msg);
 }
 function updPay(){
   const p=document.getElementById('e-pay').value;
