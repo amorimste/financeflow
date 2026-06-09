@@ -560,27 +560,28 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 
         <!-- FORM: INVESTIMENTO -->
         <div id="invest-form" style="display:none">
-          <div class="alert ag" style="margin-bottom:12px">💹 O aporte será registrado diretamente na seção <strong>Investimentos</strong>, com rendimento calculado automaticamente.</div>
-          <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-            <div class="fg" style="flex:1;margin:0"><label>Tipo de Investimento *</label>
-              <select id="ni-type" onchange="updNiType()">
-                <option value="">— Selecione um tipo cadastrado —</option>
-              </select>
-            </div>
-            <button class="btn btn-sm btn-s" style="margin-top:20px" onclick="openInvTypeMo()">⚙️ Gerenciar</button>
+          <div id="ni-empty-alert" class="alert aw" style="display:none;margin-bottom:12px">
+            ⚠️ Nenhum investimento cadastrado. <a onclick="nav('investimentos')" style="color:var(--orange);cursor:pointer;font-weight:600;text-decoration:underline">Cadastre um investimento →</a>
           </div>
-          <!-- Info do tipo selecionado -->
-          <div id="ni-info" style="display:none;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:9px;padding:10px 14px;font-size:.82rem;color:var(--blue);margin-bottom:12px">
-            <div>📊 Rendimento: <strong id="ni-yield">0% a.a.</strong> (calculado <strong id="ni-freq">mensalmente</strong>)</div>
-            <div style="color:var(--text2);font-size:.75rem;margin-top:4px">Instituição: <strong id="ni-inst-label">—</strong></div>
+          <div class="fg"><label>Investimento *</label>
+            <select id="ni-type" onchange="updNiType()">
+              <option value="">— Selecione um investimento —</option>
+            </select>
+          </div>
+          <!-- Info do investimento selecionado -->
+          <div id="ni-info" style="display:none;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:9px;padding:10px 14px;font-size:.82rem;color:var(--blue);margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+              <span>🏦 <strong id="ni-inst-label">—</strong></span>
+              <span>📊 <strong id="ni-yield">—</strong></span>
+            </div>
+            <div style="color:var(--text2);font-size:.75rem;margin-top:4px">Valor atual: <strong id="ni-curr-val" style="color:var(--green)">—</strong></div>
           </div>
           <div class="fr">
-            <div class="fg"><label>Valor Aportado (R$) *</label><input type="text" id="ni-val" inputmode="decimal" placeholder="0,00"></div>
+            <div class="fg"><label>Valor do Aporte (R$) *</label><input type="text" id="ni-val" inputmode="decimal" placeholder="0,00"></div>
             <div class="fg"><label>Data do Aporte *</label><input type="date" id="ni-date"></div>
           </div>
-          <div class="fg"><label>Notas (opcional)</label><input type="text" id="ni-notes" placeholder="Ex: Investimento estratégico..."></div>
-          </div>
-          <button class="btn btn-p" style="background:var(--blue)" onclick="saveInvestLaunch()">💹 Registrar Investimento</button>
+          <div class="fg"><label>Notas (opcional)</label><input type="text" id="ni-notes" placeholder="Ex: Aporte mensal..."></div>
+          <button class="btn btn-p" style="background:var(--blue)" onclick="saveInvestLaunch()">💹 Registrar Aporte</button>
         </div>
 
       </div>
@@ -1937,64 +1938,57 @@ function delInvType(id){
 
 function updNiTypeOptions(){
   const select=document.getElementById('ni-type');
-  select.innerHTML=`<option value="">— Selecione um tipo cadastrado —</option>`;
-  select.innerHTML+=S.investmentTypes.map(t=>`<option value="${t.id}">${t.name} (${t.yield}% a.a.)</option>`).join('');
+  const emptyAlert=document.getElementById('ni-empty-alert');
+  select.innerHTML=`<option value="">— Selecione um investimento —</option>`;
+  if(!S.investments.length){
+    if(emptyAlert) emptyAlert.style.display='flex';
+    return;
+  }
+  if(emptyAlert) emptyAlert.style.display='none';
+  select.innerHTML+=S.investments.map(inv=>{
+    const ti=INV_TYPES[inv.type]||INV_TYPES.outro;
+    return`<option value="${inv.id}">${ti.icon} ${inv.name}${inv.institution?' · '+inv.institution:''} — ${fm(Number(inv.currentValue))}</option>`;
+  }).join('');
 }
 
 function updNiType(){
-  const typeId=document.getElementById('ni-type').value;
+  const invId=document.getElementById('ni-type').value;
   const info=document.getElementById('ni-info');
-  if(!typeId){info.style.display='none';return}
-  const type=S.investmentTypes.find(t=>t.id===typeId);
-  if(!type){info.style.display='none';return}
-  document.getElementById('ni-yield').textContent=`${type.yield}% a.a.`;
-  document.getElementById('ni-inst-label').textContent=type.institution;
+  if(!invId){info.style.display='none';return}
+  const inv=S.investments.find(i=>i.id===invId);
+  if(!inv){info.style.display='none';return}
+  const ti=INV_TYPES[inv.type]||INV_TYPES.outro;
+  document.getElementById('ni-inst-label').textContent=inv.institution||ti.label;
+  document.getElementById('ni-yield').textContent=inv.yield!=null?`${inv.yield}% a.a.`:ti.label;
+  document.getElementById('ni-curr-val').textContent=fm(Number(inv.currentValue));
   info.style.display='block';
 }
 
 function saveInvestLaunch(){
-  const typeId=document.getElementById('ni-type').value;
+  const invId=document.getElementById('ni-type').value;
   const val=parseMoney(document.getElementById('ni-val').value);
   const date=document.getElementById('ni-date').value;
   const notes=document.getElementById('ni-notes').value.trim();
 
-  if(!typeId||!val||!date){toast('Preencha os campos obrigatórios','error');return}
+  if(!invId||isNaN(val)||!date){toast('Preencha todos os campos obrigatórios','error');return}
   if(val<=0){toast('Valor deve ser positivo','error');return}
 
-  const type=S.investmentTypes.find(t=>t.id===typeId);
-  if(!type){toast('Tipo inválido','error');return}
+  const inv=S.investments.find(i=>i.id===invId);
+  if(!inv){toast('Investimento não encontrado','error');return}
 
-  // Verifica se já existe investimento deste tipo
-  const existing=S.investments.find(i=>i.typeId===typeId);
-  if(existing){
-    existing.invested=Number(existing.invested)+val;
-    existing.currentValue=Number(existing.currentValue)+val;
-    existing.lastAportDate=date;
-    if(notes) existing.notes=notes;
-    toast(`Aporte de ${fm(val)} adicionado a "${type.name}"! 💹`);
-  }else{
-    S.investments.push({
-      id:uid(),
-      typeId,
-      name:type.name,
-      institution:type.institution,
-      yield:type.yield,
-      invested:val,
-      currentValue:val,
-      date,
-      lastAportDate:date,
-      notes,
-      yields:[]  // historico de rendimentos
-    });
-    toast(`Investimento "${type.name}" registrado! 💹`);
-  }
+  inv.invested=Number(inv.invested)+val;
+  inv.currentValue=Number(inv.currentValue)+val;
+  inv.lastAportDate=date;
+  if(notes) inv.notes=notes;
 
   persist();
   document.getElementById('ni-val').value='';
-  document.getElementById('ni-date').value='';
+  document.getElementById('ni-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('ni-notes').value='';
   document.getElementById('ni-type').value='';
   updNiType();
+  updNiTypeOptions(); // atualiza valores no dropdown
+  toast(`✅ Aporte de ${fm(val)} adicionado a "${inv.name}"! 💹`);
 }
 function updPay(){
   const p=document.getElementById('e-pay').value;
